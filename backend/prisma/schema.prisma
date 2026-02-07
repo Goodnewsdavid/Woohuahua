@@ -1,0 +1,184 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id              String    @id @default(uuid())
+  email           String    @unique
+  passwordHash    String
+  role            Role      @default(USER)
+  emailVerified   Boolean   @default(false)
+  emailVerifiedAt DateTime?
+  isActive        Boolean   @default(true)
+  deletedAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  firstName  String?
+  lastName   String?
+  phone      String?
+  postcode   String?
+
+  emailVerifications EmailVerification[]
+  passwordResets     PasswordReset[]
+  sessions          Session[]
+  pets              Pet[]
+}
+
+enum PetSpecies {
+  dog
+  cat
+  rabbit
+  ferret
+  other
+}
+
+enum PetStatus {
+  registered
+  lost
+  found
+  transferred
+  deceased
+}
+
+model Pet {
+  id              String     @id @default(uuid())
+  userId          String
+  microchipNumber String
+  name            String
+  species         PetSpecies
+  breed           String
+  color           String
+  dateOfBirth     DateTime?
+  sex             String     // "male" | "female"
+  neutered        Boolean    @default(false)
+  notes           String?
+  imageUrl        String?
+  status          PetStatus  @default(registered)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([microchipNumber])
+}
+
+model EmailVerification {
+  id        String    @id @default(uuid())
+  userId    String
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([token])
+}
+
+model PasswordReset {
+  id        String    @id @default(uuid())
+  userId    String
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([token])
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([token])
+}
+
+// Disputes & Complaints (admin-managed)
+enum DisputeStatus {
+  open
+  under_review
+  resolved
+}
+
+model Dispute {
+  id          String        @id @default(uuid())
+  userId      String?
+  subject     String
+  description String
+  status      DisputeStatus @default(open)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+// AI Chat audit logging (compliance-first)
+model ChatSession {
+  id                       String    @id @default(uuid())
+  sessionId                String    @unique // Client-facing id for continuation
+  userId                   String?
+  humanEscalationRequested Boolean   @default(false)
+  escalationResolvedAt     DateTime? // when admin marked escalation resolved
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+
+  messages ChatMessage[]
+
+  @@index([sessionId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model ChatMessage {
+  id             String   @id @default(uuid())
+  chatSessionId  String
+  role           String   // "user" | "assistant" | "system"
+  content        String
+  metadata       Json?    // e.g. escalation flags
+  createdAt      DateTime @default(now())
+
+  chatSession ChatSession @relation(fields: [chatSessionId], references: [id], onDelete: Cascade)
+
+  @@index([chatSessionId])
+  @@index([createdAt])
+}
+
+// AI Call Centre audit logging (compliance-first)
+model CallSession {
+  id                       String    @id @default(uuid())
+  twilioCallSid            String?   @unique // Twilio call SID
+  userId                   String?
+  callerType               String?   // owner | organisation | emergency
+  humanEscalationRequested Boolean   @default(false)
+  escalationResolvedAt     DateTime? // when admin marked escalation resolved
+  durationSeconds          Int?      // call duration when ended
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+
+  @@index([twilioCallSid])
+  @@index([userId])
+  @@index([createdAt])
+}
