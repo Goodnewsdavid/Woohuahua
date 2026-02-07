@@ -28,6 +28,7 @@ import MyDetails from "./pages/MyDetails";
 import PetDetails from "./pages/PetDetails";
 import EditPet from "./pages/EditPet";
 import TransferOwnership from "./pages/TransferOwnership";
+import TransferRequests from "./pages/TransferRequests";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
@@ -72,6 +73,7 @@ const App = () => (
           <Route path="/pet-details" element={<ProtectedRoute><PetDetails /></ProtectedRoute>} />
           <Route path="/edit-pet" element={<ProtectedRoute><EditPet /></ProtectedRoute>} />
           <Route path="/transfer-ownership" element={<ProtectedRoute><TransferOwnership /></ProtectedRoute>} />
+          <Route path="/transfer-requests" element={<ProtectedRoute><TransferRequests /></ProtectedRoute>} />
           {/* Admin (role-based, same login API) */}
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin/dashboard" element={<AdminRoute><AdminLayout><AdminDashboard /></AdminLayout></AdminRoute>} />

@@ -106,6 +106,22 @@ export default function AdminUsers() {
     }
   };
 
+  const handleReactivate = async (user: UserRow) => {
+    try {
+      const res = await fetch(apiUrl(`/api/admin/users/${user.id}`), {
+        method: "PATCH",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ reactivate: true }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      toast({ title: "User reactivated. They can log in again." });
+      setSelectedUser(null);
+      loadUsers();
+    } catch {
+      toast({ title: "Error", description: "Failed to reactivate.", variant: "destructive" });
+    }
+  };
+
   const statusBadge = (u: UserRow) => {
     if (u.deletedAt) return <Badge variant="secondary">Soft-deleted</Badge>;
     if (!u.isActive) return <Badge variant="outline">Deactivated</Badge>;
@@ -223,26 +239,36 @@ export default function AdminUsers() {
               </div>
               <div>Status: {statusBadge(selectedUser)}</div>
               <div>Role: {selectedUser.role}</div>
-              {!selectedUser.deletedAt && selectedUser.isActive && (
-                <div className="flex gap-2 pt-4">
+              <div className="flex flex-wrap gap-2 pt-4">
+                {(!selectedUser.isActive || selectedUser.deletedAt) && (
                   <Button
-                    variant="outline"
-                    onClick={() =>
-                      setActionConfirm({ type: "deactivate", user: selectedUser })
-                    }
+                    onClick={() => handleReactivate(selectedUser)}
+                    className="bg-green-600 hover:bg-green-700"
                   >
-                    Deactivate user
+                    Activate user
                   </Button>
-                  <Button
-                    variant="destructive"
-                    onClick={() =>
-                      setActionConfirm({ type: "softDelete", user: selectedUser })
-                    }
-                  >
-                    Soft-delete user
-                  </Button>
-                </div>
-              )}
+                )}
+                {!selectedUser.deletedAt && selectedUser.isActive && (
+                  <>
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        setActionConfirm({ type: "deactivate", user: selectedUser })
+                      }
+                    >
+                      Deactivate user
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() =>
+                        setActionConfirm({ type: "softDelete", user: selectedUser })
+                      }
+                    >
+                      Soft-delete user
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
           )}
         </SheetContent>

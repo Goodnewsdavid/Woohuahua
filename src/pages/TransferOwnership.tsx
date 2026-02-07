@@ -24,6 +24,7 @@ export default function TransferOwnership() {
   const [success, setSuccess] = useState(false);
   const [pet, setPet] = useState<{ id: string; name: string; microchipNumber: string } | null>(null);
   const [newOwnerEmail, setNewOwnerEmail] = useState('');
+  const [outgoing, setOutgoing] = useState<{ id: string; petName: string; toEmail: string; status: string; createdAt: string }[]>([]);
   const displayName = getUser()?.email?.split('@')[0] ?? 'User';
 
   useEffect(() => {
@@ -70,12 +71,29 @@ export default function TransferOwnership() {
         return;
       }
       setSuccess(true);
+      setNewOwnerEmail('');
+      loadOutgoing();
     } catch {
       setError('Could not reach the server.');
     } finally {
       setSubmitting(false);
     }
   };
+
+  const loadOutgoing = async () => {
+    try {
+      const res = await fetch(apiUrl('/api/transfers'), { headers: getAuthHeaders() });
+      if (!res.ok) return;
+      const data = await res.json();
+      setOutgoing(data.outgoing ?? []);
+    } catch {
+      setOutgoing([]);
+    }
+  };
+
+  useEffect(() => {
+    if (getAuthHeaders().Authorization) loadOutgoing();
+  }, []);
 
   if (loading) {
     return (
@@ -108,16 +126,37 @@ export default function TransferOwnership() {
           <Card className="border-2 border-success/30 bg-success-light/30">
             <CardContent className="py-12 text-center">
               <h2 className="font-display text-xl font-semibold text-success">
-                Transfer Complete
+                Transfer request sent
               </h2>
               <p className="mt-2 text-muted-foreground">
-                Ownership of {pet?.name} has been transferred to {newOwnerEmail}.
+                {newOwnerEmail} will see the request in their account and can accept or reject. You can see the status below.
               </p>
               <Button className="mt-6" asChild>
-                <Link to="/my-pets-timeline">Back to My Pets</Link>
+                <Link to="/transfer-ownership">Continue</Link>
               </Button>
             </CardContent>
           </Card>
+          {outgoing.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Your transfer requests</CardTitle>
+                <CardDescription>Status of transfers you started</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  {outgoing.slice(0, 5).map((t) => (
+                    <li key={t.id} className="flex items-center justify-between rounded-lg border p-3 text-sm">
+                      <span>{t.petName} → {t.toEmail}</span>
+                      <span className={`rounded-full px-2 py-0.5 font-medium ${
+                        t.status === 'pending' ? 'bg-amber-100 text-amber-800' :
+                        t.status === 'accepted' ? 'bg-green-100 text-green-800' : 'bg-muted text-muted-foreground'
+                      }`}>{t.status}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </DashboardLayout>
     );
@@ -137,8 +176,7 @@ export default function TransferOwnership() {
           <CardHeader>
             <CardTitle className="font-display text-xl">Transfer Ownership</CardTitle>
             <CardDescription>
-              Transfer {pet?.name} ({pet?.microchipNumber}) to a new owner. The new owner must
-              have an active Woo-Huahua account with a verified email.
+              Send a transfer request to a new owner. They must have an account (identified by email) and will see the request in-app; ownership only changes when they accept.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -169,14 +207,13 @@ export default function TransferOwnership() {
 
               <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground">
                 <p>
-                  This action cannot be undone. The pet will be removed from your account and
-                  appear under the new owner&apos;s My Pets list.
+                  The receiver will get a notification and can accept or reject. The pet only moves to their account when they accept.
                 </p>
               </div>
 
               <div className="flex gap-2">
                 <Button type="submit" disabled={submitting || !newOwnerEmail.trim()}>
-                  {submitting ? 'Transferring...' : 'Transfer Ownership'}
+                  {submitting ? 'Sending...' : 'Send transfer request'}
                 </Button>
                 <Button variant="outline" asChild>
                   <Link to={`/pet-details?id=${pet?.id}`}>Cancel</Link>
@@ -185,6 +222,28 @@ export default function TransferOwnership() {
             </form>
           </CardContent>
         </Card>
+
+        {outgoing.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Your transfer requests</CardTitle>
+              <CardDescription>Status visible to you</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2">
+                {outgoing.map((t) => (
+                  <li key={t.id} className="flex items-center justify-between rounded-lg border p-3 text-sm">
+                    <span>{t.petName} → {t.toEmail}</span>
+                    <span className={`rounded-full px-2 py-0.5 font-medium ${
+                      t.status === 'pending' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' :
+                      t.status === 'accepted' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-muted text-muted-foreground'
+                    }`}>{t.status}</span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </DashboardLayout>
   );

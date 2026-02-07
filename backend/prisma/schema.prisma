@@ -29,10 +29,13 @@ model User {
   phone      String?
   postcode   String?
 
-  emailVerifications EmailVerification[]
-  passwordResets     PasswordReset[]
-  sessions          Session[]
-  pets              Pet[]
+  emailVerifications  EmailVerification[]
+  passwordResets      PasswordReset[]
+  sessions            Session[]
+  pets                Pet[]
+  transfersSent       TransferRequest[] @relation("FromUser")
+  transfersReceived   TransferRequest[] @relation("ToUser")
+  registrationPayments RegistrationPayment[]
 }
 
 enum PetSpecies {
@@ -68,10 +71,54 @@ model Pet {
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transferRequests     TransferRequest[]
+  registrationPayment  RegistrationPayment?
 
   @@index([userId])
   @@index([microchipNumber])
+}
+
+// One-time payment per pet registration (£24.99). petId null = unused credit.
+model RegistrationPayment {
+  id               String    @id @default(uuid())
+  userId           String
+  stripeSessionId String    @unique
+  amountPence      Int       // 2499
+  currency         String    // "gbp"
+  petId            String?   @unique // set when credit is used for a pet
+  createdAt        DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pet  Pet?  @relation(fields: [petId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([petId])
+}
+
+enum TransferStatus {
+  pending
+  accepted
+  rejected
+}
+
+model TransferRequest {
+  id         String         @id @default(uuid())
+  petId      String
+  fromUserId String
+  toUserId   String
+  status     TransferStatus @default(pending)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  pet  Pet  @relation(fields: [petId], references: [id], onDelete: Cascade)
+  from User @relation("FromUser", fields: [fromUserId], references: [id], onDelete: Cascade)
+  to   User @relation("ToUser", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  @@index([petId])
+  @@index([fromUserId])
+  @@index([toUserId])
+  @@index([status])
 }
 
 model EmailVerification {

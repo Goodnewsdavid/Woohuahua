@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Calendar, Hash, Heart, Info, PawPrint } from 'lucide-react';
+import { ArrowLeft, Calendar, Hash, Heart, Info, PawPrint, Flower2 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { apiUrl } from '@/lib/api';
 import { getAuthHeaders, getUser } from '@/lib/auth';
 import { getDemoPetById, type ApiPet } from '@/data/demoPets';
+import { getCondolenceMessage } from '@/lib/condolence';
 
 function formatDate(dateString: string | null) {
   if (!dateString) return 'Unknown';
@@ -17,9 +18,44 @@ function formatDate(dateString: string | null) {
   });
 }
 
-function PetDetailContent({ pet, isDemo }: { pet: ApiPet; isDemo: boolean }) {
+function petStatusBadgeClass(status: string): string {
+  if (status === 'registered') return 'bg-success-light text-success dark:bg-green-900/30 dark:text-green-400';
+  if (status === 'lost') return 'bg-destructive-light text-destructive dark:bg-red-900/30 dark:text-red-400';
+  if (status === 'deceased') return 'bg-muted text-muted-foreground dark:bg-slate-700/50 dark:text-slate-300';
+  return 'bg-muted text-muted-foreground';
+}
+
+function PetDetailContent({
+  pet,
+  isDemo,
+  onReportDeceased,
+  reportingDeceased,
+}: {
+  pet: ApiPet;
+  isDemo: boolean;
+  onReportDeceased?: () => Promise<void>;
+  reportingDeceased?: boolean;
+}) {
+  const isDeceased = pet.status === 'deceased';
+  const { heading, quote } = getCondolenceMessage(pet.name);
+
   return (
     <div className="space-y-6">
+      {/* Condolence message when pet is deceased */}
+      {isDeceased && (
+        <Card className="border-muted bg-muted/30">
+          <CardContent className="flex items-start gap-4 pt-6">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-muted">
+              <Flower2 className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <div className="space-y-1">
+              <p className="font-medium text-foreground">{heading}</p>
+              <p className="text-sm text-muted-foreground italic">&ldquo;{quote}&rdquo;</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Header with image and name */}
       <Card className="overflow-hidden">
         <CardHeader className="bg-gradient-surface border-b border-border">
@@ -41,13 +77,7 @@ function PetDetailContent({ pet, isDemo }: { pet: ApiPet; isDemo: boolean }) {
               <div className="flex flex-wrap items-center gap-2">
                 <CardTitle className="font-display text-2xl">{pet.name}</CardTitle>
                 <span
-                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                    pet.status === 'registered'
-                      ? 'bg-success-light text-success'
-                      : pet.status === 'lost'
-                      ? 'bg-destructive-light text-destructive'
-                      : 'bg-muted text-muted-foreground'
-                  }`}
+                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${petStatusBadgeClass(pet.status)}`}
                 >
                   {pet.status}
                 </span>
@@ -154,9 +184,21 @@ function PetDetailContent({ pet, isDemo }: { pet: ApiPet; isDemo: boolean }) {
           <Button variant="outline" asChild>
             <Link to={`/edit-pet?id=${pet.id}`}>Edit details</Link>
           </Button>
-          <Button variant="outline" asChild>
-            <Link to="/lost-pet">Report lost</Link>
-          </Button>
+          {!isDeceased && (
+            <>
+              <Button variant="outline" asChild>
+                <Link to="/lost-pet">Report lost</Link>
+              </Button>
+              <Button
+                variant="outline"
+                className="text-muted-foreground hover:text-muted-foreground"
+                disabled={reportingDeceased}
+                onClick={onReportDeceased}
+              >
+                {reportingDeceased ? 'Updating…' : 'Report as deceased'}
+              </Button>
+            </>
+          )}
         </div>
       )}
     </div>
@@ -169,6 +211,7 @@ export default function PetDetails() {
   const [pet, setPet] = useState<ApiPet | null>(null);
   const [loading, setLoading] = useState(!!id);
   const [error, setError] = useState<string | null>(null);
+  const [reportingDeceased, setReportingDeceased] = useState(false);
   const displayName = getUser()?.email?.split('@')[0] ?? 'User';
 
   const isDemoId = id.startsWith('demo-');
@@ -235,6 +278,29 @@ export default function PetDetails() {
     );
   }
 
+  const handleReportDeceased = async () => {
+    if (!pet || pet.status === 'deceased') return;
+    setReportingDeceased(true);
+    setError(null);
+    try {
+      const res = await fetch(apiUrl(`/api/pets/${pet.id}`), {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ status: 'deceased' }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? 'Failed to update.');
+      }
+      const updated = await res.json();
+      setPet(updated);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Something went wrong.');
+    } finally {
+      setReportingDeceased(false);
+    }
+  };
+
   return (
     <DashboardLayout userName={displayName}>
       <div className="space-y-6">
@@ -246,7 +312,15 @@ export default function PetDetails() {
             </Link>
           </Button>
         </div>
-        <PetDetailContent pet={pet} isDemo={isDemoId} />
+        {error && (
+          <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
+        )}
+        <PetDetailContent
+          pet={pet}
+          isDemo={isDemoId}
+          onReportDeceased={isDemoId ? undefined : handleReportDeceased}
+          reportingDeceased={reportingDeceased}
+        />
       </div>
     </DashboardLayout>
   );

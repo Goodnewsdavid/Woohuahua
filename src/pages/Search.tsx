@@ -149,11 +149,13 @@ export default function SearchPage() {
                                 {result.petName}
                               </h3>
                               <span
-                                className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                                className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
                                   result.status === 'registered'
                                     ? 'bg-success-light text-success'
                                     : result.status === 'lost'
                                     ? 'bg-destructive-light text-destructive'
+                                    : result.status === 'deceased'
+                                    ? 'bg-muted text-muted-foreground'
                                     : 'bg-warning-light text-warning'
                                 }`}
                               >

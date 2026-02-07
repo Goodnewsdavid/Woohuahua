@@ -60,7 +60,15 @@ export async function PATCH(
     const body = await request.json().catch(() => ({}));
     const deactivate = body.deactivate === true;
     const softDelete = body.softDelete === true;
+    const reactivate = body.reactivate === true;
 
+    if (reactivate) {
+      await prisma.user.update({
+        where: { id },
+        data: { isActive: true, deletedAt: null },
+      });
+      return NextResponse.json({ ok: true, message: "User reactivated. They can log in again." });
+    }
     if (softDelete) {
       await prisma.user.update({
         where: { id },
@@ -77,7 +85,7 @@ export async function PATCH(
     }
 
     return NextResponse.json(
-      { error: "No valid action. Use deactivate or softDelete." },
+      { error: "No valid action. Use reactivate, deactivate, or softDelete." },
       { status: 400 }
     );
   } catch {

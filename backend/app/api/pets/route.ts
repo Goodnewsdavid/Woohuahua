@@ -72,6 +72,7 @@ export async function POST(request: Request) {
     const sex = typeof body.sex === "string" ? body.sex.trim().toLowerCase() : "";
     const neutered = Boolean(body.neutered);
     const notes = typeof body.notes === "string" ? body.notes.trim() || null : null;
+    const imageUrl = typeof body.imageUrl === "string" ? body.imageUrl.trim() || null : null;
 
     if (!microchipNumber || microchipNumber.length < 15) {
       return NextResponse.json(
@@ -114,6 +115,17 @@ export async function POST(request: Request) {
       );
     }
 
+    const unusedPayment = await prisma.registrationPayment.findFirst({
+      where: { userId, petId: null },
+      orderBy: { createdAt: "asc" },
+    });
+    if (!unusedPayment) {
+      return NextResponse.json(
+        { error: "Payment required. Registering a microchip costs £24.99 per pet. Please pay first then add your pet.", code: "PAYMENT_REQUIRED" },
+        { status: 402 }
+      );
+    }
+
     const pet = await prisma.pet.create({
       data: {
         userId,
@@ -126,7 +138,13 @@ export async function POST(request: Request) {
         sex,
         neutered,
         notes,
+        imageUrl,
       },
+    });
+
+    await prisma.registrationPayment.update({
+      where: { id: unusedPayment.id },
+      data: { petId: pet.id },
     });
 
     return NextResponse.json(toPetResponse(pet), { status: 201 });

@@ -242,3 +242,38 @@ export const catBreeds = [
   'Mixed Breed',
   'Other',
 ];
+
+// Common rabbit breeds
+export const rabbitBreeds = [
+  'Netherland Dwarf',
+  'Mini Lop',
+  'Dutch',
+  'Lionhead',
+  'French Lop',
+  'Rex',
+  'English Spot',
+  'Flemish Giant',
+  'Angora',
+  'Mini Rex',
+  'Himalayan',
+  'Mixed Breed',
+  'Other',
+];
+
+// Common ferret breeds / types
+export const ferretBreeds = [
+  'Sable',
+  'Albino',
+  'Dark-eyed White',
+  'Silver',
+  'Chocolate',
+  'Cinnamon',
+  'Mixed',
+  'Other',
+];
+
+// When species is "other"
+export const otherBreeds = [
+  'Mixed Breed',
+  'Other',
+];

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   PawPrint,
@@ -13,8 +13,21 @@ import {
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { currentUser, mockPets, mockActivities } from '@/data/mockData';
+import { apiUrl } from '@/lib/api';
+import { getAuthHeaders } from '@/lib/auth';
 import { isLoggedIn, getUser } from '@/lib/auth';
+
+type ApiPet = {
+  id: string;
+  microchipNumber: string;
+  name: string;
+  species: string;
+  breed: string;
+  color: string;
+  status: string;
+  imageUrl: string | null;
+  updatedAt: string;
+};
 
 const quickActions = [
   {
@@ -50,12 +63,27 @@ const quickActions = [
 export default function Dashboard() {
   const navigate = useNavigate();
   const storedUser = getUser();
-  const displayName = storedUser?.email?.split('@')[0] ?? currentUser.name.split(' ')[0];
+  const displayName = storedUser?.email?.split('@')[0] ?? 'User';
+  const [pets, setPets] = useState<ApiPet[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!isLoggedIn()) {
       navigate('/login', { replace: true });
+      return;
     }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(apiUrl('/api/pets'), { headers: getAuthHeaders() });
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        if (!cancelled) setPets(Array.isArray(data) ? data : []);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
   }, [navigate]);
 
   const formatDate = (dateString: string) => {
@@ -95,11 +123,11 @@ export default function Dashboard() {
           <div className="mt-4 flex items-center gap-4 text-sm text-white/80">
             <span className="flex items-center gap-1">
               <PawPrint className="h-4 w-4" />
-              {mockPets.length} pets registered
+              {loading ? '…' : `${pets.length} pet${pets.length !== 1 ? 's' : ''} registered`}
             </span>
             <span className="flex items-center gap-1">
               <TrendingUp className="h-4 w-4" />
-              All records up to date
+              {pets.length > 0 ? 'Keep details up to date' : 'Register a pet to get started'}
             </span>
           </div>
         </div>
@@ -151,78 +179,94 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {mockPets.map((pet) => (
-                  <Link
-                    key={pet.id}
-                    to={`/pet-details?id=${pet.id}`}
-                    className="flex items-center gap-4 rounded-xl border border-border p-3 transition-colors hover:bg-muted/50"
-                  >
-                    <div className="h-14 w-14 overflow-hidden rounded-xl bg-muted">
-                      {pet.imageUrl ? (
-                        <img
-                          src={pet.imageUrl}
-                          alt={pet.name}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center">
-                          <PawPrint className="h-6 w-6 text-muted-foreground" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-semibold text-foreground">{pet.name}</h4>
-                        <span
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                            pet.status === 'registered'
-                              ? 'bg-success-light text-success'
-                              : pet.status === 'lost'
-                              ? 'bg-destructive-light text-destructive'
-                              : 'bg-muted text-muted-foreground'
-                          }`}
-                        >
-                          {pet.status}
-                        </span>
+                {loading ? (
+                  <p className="py-4 text-center text-sm text-muted-foreground">Loading pets…</p>
+                ) : pets.length === 0 ? (
+                  <p className="py-4 text-center text-sm text-muted-foreground">
+                    No pets yet. <Link to="/register" className="text-primary underline">Register your first pet</Link>.
+                  </p>
+                ) : (
+                  pets.map((pet) => (
+                    <Link
+                      key={pet.id}
+                      to={`/pet-details?id=${pet.id}`}
+                      className="flex items-center gap-4 rounded-xl border border-border p-3 transition-colors hover:bg-muted/50"
+                    >
+                      <div className="h-14 w-14 overflow-hidden rounded-xl bg-muted">
+                        {pet.imageUrl ? (
+                          <img
+                            src={pet.imageUrl}
+                            alt={pet.name}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center">
+                            <PawPrint className="h-6 w-6 text-muted-foreground" />
+                          </div>
+                        )}
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {pet.breed} • {pet.species}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Chip: {pet.microchipNumber}
-                      </p>
-                    </div>
-                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                  </Link>
-                ))}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-semibold text-foreground">{pet.name}</h4>
+                          <span
+                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
+                              pet.status === 'registered'
+                                ? 'bg-success-light text-success dark:bg-green-900/30 dark:text-green-400'
+                                : pet.status === 'lost'
+                                ? 'bg-destructive-light text-destructive dark:bg-red-900/30 dark:text-red-400'
+                                : pet.status === 'deceased'
+                                ? 'bg-muted text-muted-foreground dark:bg-slate-700/50 dark:text-slate-300'
+                                : 'bg-muted text-muted-foreground'
+                            }`}
+                          >
+                            {pet.status}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {pet.breed} • {pet.species}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Chip: {pet.microchipNumber}
+                        </p>
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                    </Link>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
 
-          {/* Recent Activity */}
+          {/* Recent Activity — from pet updates */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="font-display text-lg">Recent Activity</CardTitle>
-              <CardDescription>Latest updates</CardDescription>
+              <CardDescription>Latest updates to your pets</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {mockActivities.slice(0, 5).map((activity) => {
-                  const pet = mockPets.find((p) => p.id === activity.petId);
-                  return (
-                    <div key={activity.id} className="flex gap-3">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
+                {loading ? (
+                  <p className="py-2 text-sm text-muted-foreground">Loading…</p>
+                ) : pets.length === 0 ? (
+                  <p className="py-2 text-sm text-muted-foreground">No activity yet.</p>
+                ) : (
+                  [...pets]
+                    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+                    .slice(0, 5)
+                    .map((pet) => (
+                      <div key={pet.id} className="flex gap-3">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm text-foreground">{pet.name} — details on file</p>
+                          <p className="text-xs text-muted-foreground">
+                            Last updated {formatTime(pet.updatedAt)}
+                          </p>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <p className="text-sm text-foreground">{activity.description}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {pet?.name} • {formatTime(activity.timestamp)}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
+                    ))
+                )}
               </div>
             </CardContent>
           </Card>

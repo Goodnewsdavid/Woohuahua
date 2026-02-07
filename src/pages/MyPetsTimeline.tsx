@@ -6,7 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { apiUrl } from '@/lib/api';
 import { getAuthHeaders, getUser } from '@/lib/auth';
+import { CONDOLENCE_SHORT } from '@/lib/condolence';
 import { DEMO_PETS, type ApiPet } from '@/data/demoPets';
+
+function petStatusBadgeClass(status: string): string {
+  if (status === 'registered') return 'bg-success-light text-success dark:bg-green-900/30 dark:text-green-400';
+  if (status === 'lost') return 'bg-destructive-light text-destructive dark:bg-red-900/30 dark:text-red-400';
+  if (status === 'deceased') return 'bg-muted text-muted-foreground dark:bg-slate-700/50 dark:text-slate-300';
+  return 'bg-muted text-muted-foreground';
+}
 
 export default function MyPetsTimeline() {
   const [pets, setPets] = useState<ApiPet[]>([]);
@@ -103,17 +111,14 @@ export default function MyPetsTimeline() {
                         <div className="flex items-center gap-2">
                           <CardTitle className="font-display">{pet.name}</CardTitle>
                           <span
-                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                              pet.status === 'registered'
-                                ? 'bg-success-light text-success'
-                                : pet.status === 'lost'
-                                ? 'bg-destructive-light text-destructive'
-                                : 'bg-muted text-muted-foreground'
-                            }`}
+                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize ${petStatusBadgeClass(pet.status)}`}
                           >
                             {pet.status}
                           </span>
                         </div>
+                        {pet.status === 'deceased' && (
+                          <p className="text-xs italic text-muted-foreground">{CONDOLENCE_SHORT}</p>
+                        )}
                         <CardDescription>
                           {pet.breed} • {pet.sex === 'male' ? 'Male' : 'Female'} •{' '}
                           {pet.neutered ? 'Neutered' : 'Not Neutered'}
@@ -159,13 +164,17 @@ export default function MyPetsTimeline() {
                         <Button variant="outline" size="sm" asChild>
                           <Link to={`/edit-pet?id=${pet.id}`}>Edit Details</Link>
                         </Button>
-                        <Button variant="outline" size="sm" asChild>
-                          <Link to={`/transfer-ownership?id=${pet.id}`}>Transfer Ownership</Link>
-                        </Button>
-                        {pet.status !== 'lost' && (
-                          <Button variant="outline" size="sm" asChild>
-                            <Link to="/lost-pet">Report Lost</Link>
-                          </Button>
+                        {pet.status !== 'deceased' && (
+                          <>
+                            <Button variant="outline" size="sm" asChild>
+                              <Link to={`/transfer-ownership?id=${pet.id}`}>Transfer Ownership</Link>
+                            </Button>
+                            {pet.status !== 'lost' && (
+                              <Button variant="outline" size="sm" asChild>
+                                <Link to="/lost-pet">Report Lost</Link>
+                              </Button>
+                            )}
+                          </>
                         )}
                       </div>
                     )}

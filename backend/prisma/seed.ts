@@ -1,7 +1,7 @@
 /**
- * Seed script: adds dummy pet data for demo purposes.
+ * Seed script: (1) creates admin user from env; (2) adds dummy pet data for demo.
  * Run: npx prisma db seed
- * Use this so the client can see how the design looks. For production, use a clean DB or skip seeding.
+ * Admin: set ADMIN_EMAIL and ADMIN_PASSWORD in backend/.env — this account is for /admin/login only (separate from user signup).
  */
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
@@ -12,6 +12,45 @@ const DEMO_EMAIL = "test@gmail.com";
 const DEMO_PASSWORD = "demo12345";
 
 async function main() {
+  // —— Admin user (separate from normal signup): use only at /admin/login ——
+  const adminEmail = process.env.ADMIN_EMAIL?.trim();
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (adminEmail && adminPassword && adminPassword.length >= 8) {
+    const adminHash = bcrypt.hashSync(adminPassword, 10);
+    const existingAdmin = await prisma.user.findFirst({
+      where: { email: adminEmail },
+    });
+    if (existingAdmin) {
+      await prisma.user.update({
+        where: { id: existingAdmin.id },
+        data: {
+          passwordHash: adminHash,
+          role: "ADMIN",
+          emailVerified: true,
+          emailVerifiedAt: new Date(),
+          isActive: true,
+          deletedAt: null,
+        },
+      });
+      console.log("Updated admin user:", adminEmail);
+    } else {
+      await prisma.user.create({
+        data: {
+          email: adminEmail,
+          passwordHash: adminHash,
+          role: "ADMIN",
+          emailVerified: true,
+          emailVerifiedAt: new Date(),
+          isActive: true,
+        },
+      });
+      console.log("Created admin user:", adminEmail);
+    }
+  } else if (adminEmail || adminPassword) {
+    console.warn("ADMIN_EMAIL and ADMIN_PASSWORD must both be set (password at least 8 chars). Skipping admin seed.");
+  }
+
+  // —— Demo user + pets (for main site) ——
   let user = await prisma.user.findFirst({
     where: { email: DEMO_EMAIL, deletedAt: null },
   });

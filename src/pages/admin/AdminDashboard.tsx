@@ -45,23 +45,31 @@ export default function AdminDashboard() {
     pendingEscalations?: number;
   }>({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+    setError(null);
     (async () => {
       try {
         const res = await fetch(apiUrl("/api/admin/dashboard"), {
           headers: getAuthHeaders(),
         });
-        if (!res.ok || cancelled) return;
-        const data = await res.json();
-        if (!cancelled)
-          setStats({
-            totalUsers: data.totalUsers,
-            activePets: data.activePets,
-            openDisputes: data.openDisputes,
-            pendingEscalations: data.pendingEscalations,
-          });
+        const data = await res.json().catch(() => ({}));
+        if (cancelled) return;
+        if (!res.ok) {
+          setError(data.error ?? `Request failed (${res.status}). Check backend and run migrations.`);
+          setLoading(false);
+          return;
+        }
+        setStats({
+          totalUsers: data.totalUsers,
+          activePets: data.activePets,
+          openDisputes: data.openDisputes,
+          pendingEscalations: data.pendingEscalations,
+        });
+      } catch (e) {
+        if (!cancelled) setError("Could not reach the server. Is the backend running?");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -88,6 +96,12 @@ export default function AdminDashboard() {
           Overview of Woo-Huahua admin metrics. Click a card to open that section.
         </p>
       </div>
+
+      {error && (
+        <div className="rounded-lg border border-amber-500/50 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-400">
+          {error}
+        </div>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {cardConfig.map((item, i) => {

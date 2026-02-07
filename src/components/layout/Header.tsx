@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, ChevronDown, User, LogOut, Settings } from 'lucide-react';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { clearAuth, isLoggedIn as getIsLoggedIn, getUser } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import {
@@ -87,7 +88,9 @@ export function Header({ isLoggedIn: isLoggedInProp, userName: userNameProp }: H
         {/* Right side - Auth buttons or user menu */}
         <div className="flex items-center gap-2">
           {isLoggedIn ? (
-            <DropdownMenu>
+            <>
+              <NotificationBell />
+              <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="flex items-center gap-2">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
@@ -119,7 +122,8 @@ export function Header({ isLoggedIn: isLoggedInProp, userName: userNameProp }: H
                   Sign Out
                 </DropdownMenuItem>
               </DropdownMenuContent>
-            </DropdownMenu>
+              </DropdownMenu>
+            </>
           ) : (
             <div className="hidden items-center gap-2 sm:flex">
               <Button variant="ghost" asChild>

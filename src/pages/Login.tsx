@@ -39,7 +39,12 @@ export default function Login() {
         if (data.user) localStorage.setItem(USER_KEY, JSON.stringify(data.user));
       }
       toast({ title: 'Welcome back!', description: 'You are now signed in.' });
-      navigate('/dashboard');
+      // Admins go to admin dashboard; everyone else to main dashboard
+      if (data.user?.role === 'ADMIN') {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/dashboard');
+      }
     } catch {
       toast({ title: 'Error', description: 'Could not reach the server. Is the backend running?', variant: 'destructive' });
     } finally {

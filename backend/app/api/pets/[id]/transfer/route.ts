@@ -56,14 +56,29 @@ export async function POST(
       );
     }
 
-    await prisma.pet.update({
-      where: { id: petId },
-      data: { userId: newOwner.id },
+    const existingPending = await prisma.transferRequest.findFirst({
+      where: { petId, status: "pending" },
+    });
+    if (existingPending) {
+      return NextResponse.json(
+        { error: "There is already a pending transfer request for this pet." },
+        { status: 409 }
+      );
+    }
+
+    const transfer = await prisma.transferRequest.create({
+      data: {
+        petId,
+        fromUserId: currentUserId,
+        toUserId: newOwner.id,
+        status: "pending",
+      },
     });
 
     return NextResponse.json({
       success: true,
-      message: `Ownership of ${pet.name} has been transferred to ${newOwnerEmail}.`,
+      transferId: transfer.id,
+      message: "Transfer request sent. The receiver will see it in their account and can accept or reject.",
     });
   } catch {
     return NextResponse.json({ error: "Request failed." }, { status: 500 });

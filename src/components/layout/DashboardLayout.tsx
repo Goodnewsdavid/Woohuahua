@@ -10,6 +10,7 @@ import {
   ArrowLeftRight,
   Headphones,
   ChevronLeft,
+  Inbox,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Header } from './Header';
@@ -29,6 +30,7 @@ const sidebarLinks = [
   { href: '/search', label: 'Search', icon: Search },
   { href: '/lost-pet', label: 'Report Lost', icon: AlertTriangle },
   { href: '/transfer-ownership', label: 'Transfer', icon: ArrowLeftRight },
+  { href: '/transfer-requests', label: 'Transfer requests', icon: Inbox },
   { href: '/my-details', label: 'My Details', icon: UserCog },
   { href: '/ai-call-centre', label: 'AI Support', icon: Headphones },
 ];

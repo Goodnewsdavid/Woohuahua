@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowRight, PawPrint, Calendar, Info } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { ArrowRight, PawPrint, Calendar, Info, ImageIcon, X, CreditCard } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,14 +21,19 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { speciesOptions, dogBreeds, catBreeds } from '@/data/mockData';
+import { speciesOptions, dogBreeds, catBreeds, rabbitBreeds, ferretBreeds, otherBreeds } from '@/data/mockData';
 import { apiUrl } from '@/lib/api';
 import { getAuthHeaders, getUser } from '@/lib/auth';
 
 export default function Register() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [credits, setCredits] = useState<number | null>(null);
+  const [creditsLoading, setCreditsLoading] = useState(true);
+  const [payLoading, setPayLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     microchipNumber: '',
@@ -40,10 +45,128 @@ export default function Register() {
     sex: '',
     neutered: false,
     notes: '',
+    imageUrl: '',
   });
 
-  const breeds = formData.species === 'dog' ? dogBreeds : formData.species === 'cat' ? catBreeds : [];
+  const breeds =
+    formData.species === 'dog'
+      ? dogBreeds
+      : formData.species === 'cat'
+        ? catBreeds
+        : formData.species === 'rabbit'
+          ? rabbitBreeds
+          : formData.species === 'ferret'
+            ? ferretBreeds
+            : formData.species === 'other'
+              ? otherBreeds
+              : [];
   const displayName = getUser()?.email?.split('@')[0] ?? 'User';
+  const paymentSuccess = searchParams.get('payment') === 'success';
+  const paymentCancelled = searchParams.get('payment') === 'cancelled';
+
+  const fetchCredits = async () => {
+    try {
+      const res = await fetch(apiUrl('/api/payments/credits'), { headers: getAuthHeaders() });
+      if (res.ok) {
+        const data = await res.json();
+        return typeof data.credits === 'number' ? data.credits : 0;
+      }
+      return 0;
+    } catch {
+      return 0;
+    }
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const c = await fetchCredits();
+      if (!cancelled) {
+        setCredits(c);
+        setCreditsLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    if (!paymentSuccess || credits !== 0) return;
+    const t1 = setTimeout(async () => {
+      const c = await fetchCredits();
+      setCredits((prev) => (prev === 0 ? c : prev));
+    }, 2000);
+    const t2 = setTimeout(async () => {
+      const c = await fetchCredits();
+      setCredits((prev) => (prev === 0 ? c : prev));
+    }, 5000);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [paymentSuccess, credits]);
+
+  const handlePayThenRegister = async () => {
+    setError(null);
+    setPayLoading(true);
+    try {
+      const res = await fetch(apiUrl('/api/payments/create-checkout-session'), {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({}),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error ?? 'Could not start payment.');
+        setPayLoading(false);
+        return;
+      }
+      if (data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      setError('Invalid response from server.');
+    } catch {
+      setError('Network error. Please try again.');
+    }
+    setPayLoading(false);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const chosen = e.target.files?.[0];
+    if (!chosen) return;
+    if (!chosen.type.startsWith('image/')) {
+      setError('Please choose an image file (JPEG, PNG, GIF, or WebP).');
+      return;
+    }
+    if (chosen.size > 5 * 1024 * 1024) {
+      setError('Image must be 5MB or smaller.');
+      return;
+    }
+    setError(null);
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', chosen);
+      const res = await fetch(apiUrl('/api/upload'), {
+        method: 'POST',
+        headers: { Authorization: getAuthHeaders().Authorization ?? '' },
+        body: formData,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error ?? 'Upload failed.');
+        return;
+      }
+      if (data.url) {
+        setFormData((prev) => ({ ...prev, imageUrl: apiUrl(data.url) }));
+      }
+    } catch {
+      setError('Upload failed. Please try again.');
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,11 +186,17 @@ export default function Register() {
           sex: formData.sex,
           neutered: formData.neutered,
           notes: formData.notes || undefined,
+          imageUrl: formData.imageUrl || undefined,
         }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error || 'Registration failed.');
+        if (res.status === 402 && data.code === 'PAYMENT_REQUIRED') {
+          setCredits(0);
+          setError(data.error ?? 'Payment required to register a pet.');
+        } else {
+          setError(data.error || 'Registration failed.');
+        }
         setIsLoading(false);
         return;
       }
@@ -89,9 +218,75 @@ export default function Register() {
     formData.dateOfBirth &&
     formData.sex;
 
+  if (creditsLoading) {
+    return (
+      <DashboardLayout userName={displayName}>
+        <div className="mx-auto max-w-2xl py-12 text-center text-muted-foreground">Loading…</div>
+      </DashboardLayout>
+    );
+  }
+
+  if (credits !== null && credits < 1) {
+    return (
+      <DashboardLayout userName={displayName}>
+        <div className="mx-auto max-w-2xl">
+          <Card className="border-2">
+            <CardHeader>
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-hero">
+                  <CreditCard className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="font-display text-xl">Register a microchip</CardTitle>
+                  <CardDescription>
+                    £24.99 per pet — lifetime access to update your pet&apos;s details
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {paymentCancelled && (
+                <div className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
+                  Payment was cancelled. You can pay when you&apos;re ready to register a pet.
+                </div>
+              )}
+              {paymentSuccess && (
+                <div className="rounded-lg bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-400">
+                  Payment successful. You can now register your pet below.
+                </div>
+              )}
+              {error && (
+                <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
+              )}
+              <p className="text-sm text-muted-foreground">
+                It&apos;s a legal requirement to have cats and dogs microchipped. After your vet or rescue chips your pet,
+                you need to register the chip number to yourself. Pay once per pet to register with us and get lifetime
+                access to update details.
+              </p>
+              <Button
+                size="lg"
+                className="w-full"
+                disabled={payLoading}
+                onClick={handlePayThenRegister}
+              >
+                {payLoading ? 'Redirecting to payment…' : 'Pay £24.99 and register a pet'}
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout userName={displayName}>
       <div className="mx-auto max-w-2xl">
+        {paymentSuccess && (
+          <div className="mb-4 rounded-lg bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-400">
+            Payment received. Complete the form below to register your pet.
+          </div>
+        )}
         <Card className="border-2">
           <CardHeader>
             <div className="flex items-center gap-4">
@@ -285,6 +480,46 @@ export default function Register() {
                       }
                     />
                     <Label htmlFor="neutered">Neutered/Spayed</Label>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Pet photo (optional)</Label>
+                    {formData.imageUrl ? (
+                      <div className="relative inline-block">
+                        <img
+                          src={formData.imageUrl}
+                          alt="Pet preview"
+                          className="h-32 w-32 rounded-xl border border-border object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setFormData((prev) => ({ ...prev, imageUrl: '' }))}
+                          className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-destructive hover:text-destructive-foreground"
+                          aria-label="Remove photo"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-muted/30 px-6 py-8 transition-colors hover:bg-muted/50">
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/gif,image/webp"
+                          className="hidden"
+                          disabled={uploading}
+                          onChange={handleImageUpload}
+                        />
+                        {uploading ? (
+                          <span className="text-sm text-muted-foreground">Uploading…</span>
+                        ) : (
+                          <>
+                            <ImageIcon className="h-10 w-10 text-muted-foreground" />
+                            <span className="text-sm font-medium text-foreground">Choose a photo</span>
+                            <span className="text-xs text-muted-foreground">JPEG, PNG, GIF or WebP, max 5MB</span>
+                          </>
+                        )}
+                      </label>
+                    )}
                   </div>
 
                   <div className="space-y-2">
