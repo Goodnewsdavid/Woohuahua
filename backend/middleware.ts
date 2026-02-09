@@ -1,12 +1,18 @@
 import { NextResponse } from "next/server";
 
-const allowedOrigin =
-  process.env.FRONTEND_URL || "http://localhost:8080";
+const defaultFrontendUrl = "http://localhost:8080";
+const allowedFrontendUrl = (process.env.FRONTEND_URL || defaultFrontendUrl).replace(/\/$/, "");
 
 function corsHeaders(origin?: string | null) {
-  const allowOrigin = origin && (origin === "http://localhost:8080" || origin === "http://127.0.0.1:8080")
-    ? origin
-    : allowedOrigin;
+  const allowedOrigins = [
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+    allowedFrontendUrl,
+  ];
+  const allowOrigin =
+    origin && allowedOrigins.some((o) => origin === o || origin === o + "/")
+      ? origin.replace(/\/$/, "")
+      : allowedFrontendUrl;
   return {
     "Access-Control-Allow-Origin": allowOrigin,
     "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS",

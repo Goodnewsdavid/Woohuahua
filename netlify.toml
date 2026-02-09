@@ -1,0 +1,13 @@
+# Netlify config for frontend (Vite + React)
+# Build and deploy the app in the repo root (frontend only; backend is on Railway).
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+  environment = { NODE_VERSION = "18" }
+
+# SPA: all routes serve index.html (React Router handles routes)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
