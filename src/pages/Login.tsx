@@ -145,6 +145,12 @@ export default function Login() {
                   Sign up
                 </Link>
               </div>
+              <p className="mt-2 text-center text-sm text-muted-foreground">
+                Didn't receive the verification email?{' '}
+                <Link to="/resend-verification" className="font-medium text-primary hover:underline">
+                  Get verification link
+                </Link>
+              </p>
 
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">

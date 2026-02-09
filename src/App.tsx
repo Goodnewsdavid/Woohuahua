@@ -22,6 +22,7 @@ import AICallCentre from "./pages/AICallCentre";
 import Chat from "./pages/Chat";
 import ThankYou from "./pages/ThankYou";
 import VerifyEmailSent from "./pages/VerifyEmailSent";
+import ResendVerification from "./pages/ResendVerification";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import MyDetails from "./pages/MyDetails";
@@ -72,6 +73,7 @@ const App = () => (
           <Route path="/chat" element={<Chat />} />
           <Route path="/thank-you" element={<ThankYou />} />
           <Route path="/verify-email-sent" element={<VerifyEmailSent />} />
+          <Route path="/resend-verification" element={<ResendVerification />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/my-details" element={<MyDetails />} />
