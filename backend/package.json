@@ -30,6 +30,7 @@
     "twilio": "^5.3.4"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^22.16.5",
     "@types/nodemailer": "^7.0.9",
