@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/card';
 import { apiUrl } from '@/lib/api';
 import { getAuthHeaders, getUser } from '@/lib/auth';
-import { speciesOptions, dogBreeds, catBreeds } from '@/data/mockData';
+import { speciesOptions, dogBreeds, catBreeds, getBreedsForOtherSpecies, hasKnownBreedsForOtherSpecies } from '@/data/mockData';
 
 export default function EditPet() {
   const [searchParams] = useSearchParams();
@@ -52,9 +52,10 @@ export default function EditPet() {
     sex: '',
     neutered: false,
     notes: '',
+    speciesOther: '',
   });
   const displayName = getUser()?.email?.split('@')[0] ?? 'User';
-  const baseBreeds = species === 'dog' ? dogBreeds : species === 'cat' ? catBreeds : ['Other'];
+  const baseBreeds = species === 'dog' ? dogBreeds : species === 'cat' ? catBreeds : getBreedsForOtherSpecies(form.speciesOther);
   const breeds =
     form.breed && !baseBreeds.includes(form.breed)
       ? [form.breed, ...baseBreeds]
@@ -87,6 +88,7 @@ export default function EditPet() {
             sex: data.sex ?? '',
             neutered: Boolean(data.neutered),
             notes: data.notes ?? '',
+            speciesOther: data.speciesOther ?? '',
           });
         }
       } catch {
@@ -115,6 +117,7 @@ export default function EditPet() {
           sex: form.sex || undefined,
           neutered: form.neutered,
           notes: form.notes.trim() || undefined,
+          ...(species === 'other' && { speciesOther: form.speciesOther.trim() || null }),
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -195,24 +198,50 @@ export default function EditPet() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="breed">Breed *</Label>
-                  <Select
-                    value={form.breed}
-                    onValueChange={(v) => setForm({ ...form, breed: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select breed" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {breeds.length > 0 ? (
-                        breeds.map((b) => (
-                          <SelectItem key={b} value={b}>{b}</SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value="other">Other</SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
+                  {species === 'other' && !hasKnownBreedsForOtherSpecies(form.speciesOther) ? (
+                    <>
+                      <Input
+                        id="breed"
+                        placeholder="e.g., Standard Grey, Short-haired"
+                        value={form.breed}
+                        onChange={(e) => setForm({ ...form, breed: e.target.value })}
+                        required
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        No breed list for this species. Enter the breed or type.
+                      </p>
+                    </>
+                  ) : (
+                    <Select
+                      value={form.breed}
+                      onValueChange={(v) => setForm({ ...form, breed: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select breed" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {breeds.length > 0 ? (
+                          breeds.map((b) => (
+                            <SelectItem key={b} value={b}>{b}</SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="other">Other</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
+                {species === 'other' && (
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="speciesOther">Species (other) *</Label>
+                    <Input
+                      id="speciesOther"
+                      placeholder="e.g., Hamster"
+                      value={form.speciesOther}
+                      onChange={(e) => setForm({ ...form, speciesOther: e.target.value })}
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">

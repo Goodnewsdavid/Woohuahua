@@ -52,6 +52,8 @@ export async function GET(request: Request) {
       firstName: user.firstName ?? null,
       lastName: user.lastName ?? null,
       phone: user.phone ?? null,
+      addressLine1: user.addressLine1 ?? null,
+      city: user.city ?? null,
       postcode: user.postcode ?? null,
     });
   } catch {
@@ -72,12 +74,16 @@ export async function PATCH(request: Request) {
     const firstName = typeof body.firstName === "string" ? body.firstName.trim() || null : undefined;
     const lastName = typeof body.lastName === "string" ? body.lastName.trim() || null : undefined;
     const phone = typeof body.phone === "string" ? body.phone.trim() || null : undefined;
+    const addressLine1 = typeof body.addressLine1 === "string" ? body.addressLine1.trim() || null : undefined;
+    const city = typeof body.city === "string" ? body.city.trim() || null : undefined;
     const postcode = typeof body.postcode === "string" ? body.postcode.trim() || null : undefined;
 
-    const updateData: { firstName?: string | null; lastName?: string | null; phone?: string | null; postcode?: string | null } = {};
+    const updateData: Record<string, string | null | undefined> = {};
     if (firstName !== undefined) updateData.firstName = firstName;
     if (lastName !== undefined) updateData.lastName = lastName;
     if (phone !== undefined) updateData.phone = phone;
+    if (addressLine1 !== undefined) updateData.addressLine1 = addressLine1;
+    if (city !== undefined) updateData.city = city;
     if (postcode !== undefined) updateData.postcode = postcode;
 
     if (Object.keys(updateData).length === 0) {
@@ -108,6 +114,8 @@ export async function PATCH(request: Request) {
       firstName: updated.firstName ?? null,
       lastName: updated.lastName ?? null,
       phone: updated.phone ?? null,
+      addressLine1: updated.addressLine1 ?? null,
+      city: updated.city ?? null,
       postcode: updated.postcode ?? null,
     });
   } catch {

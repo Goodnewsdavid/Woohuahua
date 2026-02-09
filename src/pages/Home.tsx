@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Search,
   PawPrint,
@@ -10,10 +11,12 @@ import {
   Cat,
   Rabbit,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
+import { sanitizeMicrochipInput, validateMicrochip } from '@/lib/microchip';
 import { Layout } from '@/components/layout/Layout';
 import { isLoggedIn, getUser } from '@/lib/auth';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 
 const features = [
   {
@@ -64,8 +67,18 @@ const stats = [
 ];
 
 export default function Home() {
+  const navigate = useNavigate();
   const loggedIn = isLoggedIn();
   const userName = getUser()?.email?.split('@')[0] ?? '';
+  const [chipCheck, setChipCheck] = useState('');
+
+  const handleChipCheck = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = chipCheck.trim();
+    if (validateMicrochip(trimmed).valid) {
+      navigate(`/search?microchip=${encodeURIComponent(trimmed)}`);
+    }
+  };
 
   return (
     <Layout>
@@ -114,6 +127,22 @@ export default function Home() {
                 ? "Manage your pets, search the database, and keep your details up to date."
                 : "The UK's trusted microchip database for pet registration and reunification. Register, search, and protect your beloved pets with our DEFRA-compliant platform."}
             </p>
+
+            {/* Chip Check - prominently on home page (Defra Reg 7) */}
+            <form onSubmit={handleChipCheck} className="mb-10 flex flex-col gap-3 sm:flex-row sm:max-w-xl sm:mx-auto">
+              <Input
+                type="text"
+                placeholder="Check microchip number (e.g. 977200009123456)"
+                value={chipCheck}
+                onChange={(e) => setChipCheck(sanitizeMicrochipInput(e.target.value))}
+                maxLength={16}
+                className="h-12 bg-white/95 text-foreground placeholder:text-muted-foreground border-0"
+              />
+              <Button type="submit" size="lg" variant="secondary" className="h-12 shrink-0" disabled={!validateMicrochip(chipCheck).valid}>
+                <Search className="mr-2 h-5 w-5" />
+                Check Chip
+              </Button>
+            </form>
 
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
               {loggedIn ? (

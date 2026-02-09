@@ -10,6 +10,7 @@ function toPetResponse(pet: {
   microchipNumber: string;
   name: string;
   species: string;
+  speciesOther: string | null;
   breed: string;
   color: string;
   dateOfBirth: Date | null;
@@ -26,6 +27,7 @@ function toPetResponse(pet: {
     microchipNumber: pet.microchipNumber,
     name: pet.name,
     species: pet.species,
+    speciesOther: pet.speciesOther ?? null,
     breed: pet.breed,
     color: pet.color,
     dateOfBirth: pet.dateOfBirth?.toISOString().slice(0, 10) ?? null,
@@ -82,6 +84,7 @@ export async function PATCH(
     const body = await request.json().catch(() => ({}));
     const updateData: {
       name?: string;
+      speciesOther?: string | null;
       breed?: string;
       color?: string;
       dateOfBirth?: Date | null;
@@ -93,6 +96,7 @@ export async function PATCH(
     } = {};
 
     if (typeof body.name === "string" && body.name.trim()) updateData.name = body.name.trim();
+    if (body.speciesOther !== undefined) updateData.speciesOther = typeof body.speciesOther === "string" ? body.speciesOther.trim() || null : null;
     if (typeof body.breed === "string" && body.breed.trim()) updateData.breed = body.breed.trim();
     if (typeof body.color === "string" && body.color.trim()) updateData.color = body.color.trim();
     if (typeof body.sex === "string" && (body.sex === "male" || body.sex === "female")) updateData.sex = body.sex;

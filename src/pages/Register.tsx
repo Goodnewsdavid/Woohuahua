@@ -21,7 +21,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { speciesOptions, dogBreeds, catBreeds, rabbitBreeds, ferretBreeds, otherBreeds } from '@/data/mockData';
+import { speciesOptions, dogBreeds, catBreeds, rabbitBreeds, ferretBreeds, getBreedsForOtherSpecies, hasKnownBreedsForOtherSpecies } from '@/data/mockData';
+import { sanitizeMicrochipInput, validateMicrochip } from '@/lib/microchip';
 import { apiUrl } from '@/lib/api';
 import { getAuthHeaders, getUser } from '@/lib/auth';
 
@@ -39,6 +40,7 @@ export default function Register() {
     microchipNumber: '',
     petName: '',
     species: '',
+    speciesOther: '',
     breed: '',
     color: '',
     dateOfBirth: '',
@@ -58,11 +60,12 @@ export default function Register() {
           : formData.species === 'ferret'
             ? ferretBreeds
             : formData.species === 'other'
-              ? otherBreeds
+              ? getBreedsForOtherSpecies(formData.speciesOther)
               : [];
   const displayName = getUser()?.email?.split('@')[0] ?? 'User';
   const paymentSuccess = searchParams.get('payment') === 'success';
   const paymentCancelled = searchParams.get('payment') === 'cancelled';
+  const sessionId = searchParams.get('session_id')?.trim() ?? '';
 
   const fetchCredits = async () => {
     try {
@@ -88,6 +91,27 @@ export default function Register() {
     })();
     return () => { cancelled = true; };
   }, []);
+
+  // When returning from Stripe with session_id, confirm the payment so we get a credit
+  // (needed for local dev where the webhook cannot be reached)
+  useEffect(() => {
+    if (!paymentSuccess || !sessionId || credits !== 0) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(apiUrl(`/api/payments/confirm-session?session_id=${encodeURIComponent(sessionId)}`), {
+          headers: getAuthHeaders(),
+        });
+        if (res.ok && !cancelled) {
+          const c = await fetchCredits();
+          setCredits(c);
+        }
+      } catch {
+        // ignore; we still have the 2s/5s polling below as fallback (e.g. webhook)
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [paymentSuccess, sessionId, credits]);
 
   useEffect(() => {
     if (!paymentSuccess || credits !== 0) return;
@@ -180,6 +204,7 @@ export default function Register() {
           microchipNumber: formData.microchipNumber,
           petName: formData.petName,
           species: formData.species,
+          speciesOther: formData.species === 'other' ? formData.speciesOther.trim() || undefined : undefined,
           breed: formData.breed,
           color: formData.color,
           dateOfBirth: formData.dateOfBirth || undefined,
@@ -207,10 +232,12 @@ export default function Register() {
     }
   };
 
+  const step1Chip = validateMicrochip(formData.microchipNumber);
   const isStep1Valid =
-    formData.microchipNumber.length >= 15 &&
+    step1Chip.valid &&
     formData.petName &&
-    formData.species;
+    formData.species &&
+    (formData.species !== 'other' || formData.speciesOther.trim());
 
   const isStep2Valid =
     formData.breed &&
@@ -334,8 +361,8 @@ export default function Register() {
                     <div className="flex gap-3">
                       <Info className="h-5 w-5 shrink-0 text-info" />
                       <p className="text-sm text-info">
-                        The microchip number is usually 15 digits and can be found on your pet's
-                        microchip certificate or obtained from your vet.
+                        Accepts ISO 15-digit, AVID format (e.g. AVID*012*345*678), Trovan, or hex.
+                        Max 16 characters. Found on your pet&apos;s microchip certificate or from your vet.
                       </p>
                     </div>
                   </div>
@@ -344,16 +371,16 @@ export default function Register() {
                     <Label htmlFor="microchipNumber">Microchip Number *</Label>
                     <Input
                       id="microchipNumber"
-                      placeholder="e.g., 977200009123456"
+                      placeholder="e.g., 977200009123456 or AVID*012*345*678"
                       value={formData.microchipNumber}
                       onChange={(e) =>
-                        setFormData({ ...formData, microchipNumber: e.target.value.replace(/\D/g, '').slice(0, 15) })
+                        setFormData({ ...formData, microchipNumber: sanitizeMicrochipInput(e.target.value) })
                       }
-                      maxLength={15}
+                      maxLength={16}
                       required
                     />
                     <p className="text-xs text-muted-foreground">
-                      {formData.microchipNumber.length}/15 digits
+                      {formData.microchipNumber.length}/16 (Defra-compliant format)
                     </p>
                   </div>
 
@@ -372,7 +399,7 @@ export default function Register() {
                     <Label htmlFor="species">Species *</Label>
                     <Select
                       value={formData.species}
-                      onValueChange={(value) => setFormData({ ...formData, species: value, breed: '' })}
+                      onValueChange={(value) => setFormData({ ...formData, species: value, speciesOther: value === 'other' ? formData.speciesOther : '', breed: '' })}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select species" />
@@ -385,6 +412,20 @@ export default function Register() {
                         ))}
                       </SelectContent>
                     </Select>
+                    {formData.species === 'other' && (
+                      <div className="pt-1">
+                        <Label htmlFor="speciesOther" className="text-muted-foreground font-normal">
+                          Specify species (e.g. Hamster, Bird, Guinea pig) *
+                        </Label>
+                        <Input
+                          id="speciesOther"
+                          placeholder="e.g., Hamster"
+                          value={formData.speciesOther}
+                          onChange={(e) => setFormData({ ...formData, speciesOther: e.target.value })}
+                          className="mt-1"
+                        />
+                      </div>
+                    )}
                   </div>
 
                   <Button
@@ -405,25 +446,40 @@ export default function Register() {
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="breed">Breed *</Label>
-                      <Select
-                        value={formData.breed}
-                        onValueChange={(value) => setFormData({ ...formData, breed: value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select breed" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {breeds.length > 0 ? (
-                            breeds.map((breed) => (
-                              <SelectItem key={breed} value={breed}>
-                                {breed}
-                              </SelectItem>
-                            ))
-                          ) : (
-                            <SelectItem value="other">Other</SelectItem>
-                          )}
-                        </SelectContent>
-                      </Select>
+                      {formData.species === 'other' && !hasKnownBreedsForOtherSpecies(formData.speciesOther) ? (
+                        <>
+                          <Input
+                            id="breed"
+                            placeholder="e.g., Standard Grey, Short-haired"
+                            value={formData.breed}
+                            onChange={(e) => setFormData({ ...formData, breed: e.target.value })}
+                            required
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            No breed list for this species. Enter the breed or type (e.g. Mixed, Other).
+                          </p>
+                        </>
+                      ) : (
+                        <Select
+                          value={formData.breed}
+                          onValueChange={(value) => setFormData({ ...formData, breed: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select breed" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {breeds.length > 0 ? (
+                              breeds.map((breed) => (
+                                <SelectItem key={breed} value={breed}>
+                                  {breed}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <SelectItem value="other">Other</SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      )}
                     </div>
 
                     <div className="space-y-2">

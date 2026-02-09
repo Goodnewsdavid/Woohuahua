@@ -10,6 +10,7 @@ datasource db {
 enum Role {
   USER
   ADMIN
+  AUTHORISED  // Dog wardens, vets etc. (Reg 7(1)(e)) - can look up keeper/pet details only
 }
 
 model User {
@@ -24,10 +25,12 @@ model User {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  firstName  String?
-  lastName   String?
-  phone      String?
-  postcode   String?
+  firstName   String?
+  lastName    String?
+  phone       String?
+  addressLine1 String?
+  city        String?
+  postcode    String?
 
   emailVerifications  EmailVerification[]
   passwordResets      PasswordReset[]
@@ -36,6 +39,20 @@ model User {
   transfersSent       TransferRequest[] @relation("FromUser")
   transfersReceived   TransferRequest[] @relation("ToUser")
   registrationPayments RegistrationPayment[]
+}
+
+// Reg 7(1)(g): records to demonstrate compliance (who accessed what, when)
+model AccessLog {
+  id              String   @id @default(uuid())
+  userId          String?  // null for public chip check
+  action          String   // CHIP_CHECK (public), AUTHORISED_LOOKUP
+  microchipNumber String?
+  details         Json?    // e.g. { found: true, petId: "..." }
+  createdAt       DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
 }
 
 enum PetSpecies {
@@ -55,11 +72,13 @@ enum PetStatus {
 }
 
 model Pet {
-  id              String     @id @default(uuid())
-  userId          String
-  microchipNumber String
+  id               String     @id @default(uuid())
+  userId           String
+  microchipNumber   String
+  microchipSearchKey String   // normalized for Defra protocol look-up
   name            String
   species         PetSpecies
+  speciesOther    String?   // when species is "other", user can enter e.g. Hamster, Bird
   breed           String
   color           String
   dateOfBirth     DateTime?
@@ -77,6 +96,7 @@ model Pet {
 
   @@index([userId])
   @@index([microchipNumber])
+  @@index([microchipSearchKey])
 }
 
 // One-time payment per pet registration (£24.99). petId null = unused credit.

@@ -91,6 +91,8 @@ export default function AdminLogs() {
               <SelectItem value="chat">Chat</SelectItem>
               <SelectItem value="call">Call</SelectItem>
               <SelectItem value="user">User</SelectItem>
+              <SelectItem value="chip_check">Chip check</SelectItem>
+              <SelectItem value="authorised_lookup">Authorised lookup</SelectItem>
             </SelectContent>
           </Select>
         </div>

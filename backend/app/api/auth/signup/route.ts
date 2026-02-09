@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { Role } from "@prisma/client";
+import { sendVerificationEmail } from "@/lib/email";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PASSWORD_MIN_LENGTH = 8;
@@ -59,13 +60,16 @@ export async function POST(request: Request) {
       },
     });
 
-    const verificationUrl = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/auth/verify-email?token=${token}`;
-    console.log("Verification URL:", verificationUrl);
+    const baseUrl = process.env.BACKEND_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
+    const verificationUrl = `${baseUrl}/api/auth/verify-email?token=${token}`;
+
+    const emailSent = await sendVerificationEmail(email, verificationUrl);
+    if (!emailSent) console.log("Verification URL (email not sent):", verificationUrl);
 
     return NextResponse.json({
       success: true,
       message: "Signup successful. Please verify your email.",
-      verificationUrl,
+      verificationUrl: emailSent ? undefined : verificationUrl,
     });
   } catch {
     return NextResponse.json(

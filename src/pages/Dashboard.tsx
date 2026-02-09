@@ -16,12 +16,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { apiUrl } from '@/lib/api';
 import { getAuthHeaders } from '@/lib/auth';
 import { isLoggedIn, getUser } from '@/lib/auth';
+import { getDisplaySpecies } from '@/lib/pet';
 
 type ApiPet = {
   id: string;
   microchipNumber: string;
   name: string;
   species: string;
+  speciesOther?: string | null;
   breed: string;
   color: string;
   status: string;
@@ -70,6 +72,10 @@ export default function Dashboard() {
   useEffect(() => {
     if (!isLoggedIn()) {
       navigate('/login', { replace: true });
+      return;
+    }
+    if (storedUser?.role === 'AUTHORISED') {
+      navigate('/authorised/search', { replace: true });
       return;
     }
     let cancelled = false;
@@ -223,7 +229,7 @@ export default function Dashboard() {
                           </span>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          {pet.breed} • {pet.species}
+                          {pet.breed} • {getDisplaySpecies(pet.species, pet.speciesOther)}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           Chip: {pet.microchipNumber}

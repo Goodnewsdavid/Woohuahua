@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Search as SearchIcon, Shield, Info } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { sanitizeMicrochipInput, validateMicrochip } from '@/lib/microchip';
 import { apiUrl } from '@/lib/api';
 
 type SearchResult = {
@@ -25,11 +26,37 @@ type SearchResult = {
 };
 
 export default function SearchPage() {
-  const [microchipNumber, setMicrochipNumber] = useState('');
+  const [searchParams] = useSearchParams();
+  const qMicrochip = searchParams.get('microchip')?.trim() ?? '';
+  const [microchipNumber, setMicrochipNumber] = useState(qMicrochip);
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<SearchResult[] | null>(null);
   const [searched, setSearched] = useState(false);
+
+  useEffect(() => {
+    if (qMicrochip && validateMicrochip(qMicrochip).valid) {
+      setMicrochipNumber(qMicrochip);
+      setSearched(true);
+      setError(null);
+      setIsSearching(true);
+      fetch(apiUrl(`/api/search?microchip=${encodeURIComponent(qMicrochip)}`))
+        .then((res) => res.json().catch(() => ({})))
+        .then((data) => {
+          if (data.status === 'ERROR' && data.error) {
+            setError(data.error);
+            setResults([]);
+          } else {
+            setResults(data.found && Array.isArray(data.results) ? data.results : []);
+          }
+        })
+        .catch(() => {
+          setResults([]);
+          setError('Could not reach the server.');
+        })
+        .finally(() => setIsSearching(false));
+    }
+  }, [qMicrochip]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,12 +65,11 @@ export default function SearchPage() {
     setSearched(true);
     setResults(null);
     try {
-      const microchip = microchipNumber.replace(/\D/g, '');
-      const res = await fetch(apiUrl(`/api/search?microchip=${encodeURIComponent(microchip)}`));
+      const res = await fetch(apiUrl(`/api/search?microchip=${encodeURIComponent(microchipNumber.trim())}`));
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
+      if (data.status === 'ERROR' && data.error) {
+        setError(data.error);
         setResults([]);
-        setError(data.error ?? 'Search failed.');
         return;
       }
       setResults(data.found && Array.isArray(data.results) ? data.results : []);
@@ -82,15 +108,15 @@ export default function SearchPage() {
                     <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       id="microchip"
-                      placeholder="Enter 15-digit microchip number"
+                      placeholder="e.g. 977200009123456 or AVID*012*345*678"
                       className="pl-10 text-lg"
                       value={microchipNumber}
-                      onChange={(e) => setMicrochipNumber(e.target.value.replace(/\D/g, '').slice(0, 15))}
-                      maxLength={15}
+                      onChange={(e) => setMicrochipNumber(sanitizeMicrochipInput(e.target.value))}
+                      maxLength={16}
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {microchipNumber.length}/15 digits
+                    {microchipNumber.length}/16 (Defra format: digits, A-F, or AVID*)
                   </p>
                 </div>
 
@@ -98,7 +124,7 @@ export default function SearchPage() {
                   type="submit"
                   className="w-full"
                   size="lg"
-                  disabled={microchipNumber.length < 15 || isSearching}
+                  disabled={!validateMicrochip(microchipNumber).valid || isSearching}
                 >
                   {isSearching ? 'Searching...' : 'Search Database'}
                 </Button>
@@ -119,7 +145,7 @@ export default function SearchPage() {
               <div>
                 <p className="text-sm font-medium text-info">Live Search</p>
                 <p className="text-sm text-info/80">
-                  Search our database for pets registered with Woo-Huahua. Enter a 15-digit microchip number.
+                  Search our database for pets registered with Woo-Huahua. Accepts ISO 15-digit, AVID format, Trovan, or hex (max 16 chars).
                 </p>
               </div>
             </div>
@@ -212,9 +238,36 @@ export default function SearchPage() {
                       <span className="font-mono font-medium">{microchipNumber}</span>
                     </p>
                     <p className="mt-4 text-sm text-muted-foreground">
-                      If this pet is not yet registered, you can{' '}
+                      This microchip is not registered with Woo-Huahua. To check other UK-compliant databases (Reg 7(2)(b)), use one of the following:
+                    </p>
+                    <ul className="mt-2 list-inside list-disc text-sm text-muted-foreground space-y-1">
+                      <li>
+                        <a
+                          href="https://www.gov.uk/get-your-dog-cat-microchipped"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline"
+                        >
+                          GOV.UK – Get your dog or cat microchipped
+                        </a>
+                        {' '}(list of compliant databases)
+                      </li>
+                      <li>
+                        <a
+                          href="https://www.check-a-chip.co.uk"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline"
+                        >
+                          check-a-chip.co.uk
+                        </a>
+                        {' '}(chip look-up across databases)
+                      </li>
+                    </ul>
+                    <p className="mt-4 text-sm text-muted-foreground">
+                      If this pet should be on our database, you can{' '}
                       <Link to="/register" className="text-primary hover:underline">
-                        register them now
+                        register them here
                       </Link>
                       .
                     </p>

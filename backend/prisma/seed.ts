@@ -50,6 +50,35 @@ async function main() {
     console.warn("ADMIN_EMAIL and ADMIN_PASSWORD must both be set (password at least 8 chars). Skipping admin seed.");
   }
 
+  // —— Authorised person (Reg 7(1)(e)): dog wardens, vets – can only do microchip look-up ——
+  const authorisedEmail = process.env.AUTHORISED_EMAIL?.trim();
+  const authorisedPassword = process.env.AUTHORISED_PASSWORD;
+  if (authorisedEmail && authorisedPassword && authorisedPassword.length >= 8) {
+    const authHash = bcrypt.hashSync(authorisedPassword, 10);
+    const existingAuth = await prisma.user.findFirst({
+      where: { email: authorisedEmail },
+    });
+    if (existingAuth) {
+      await prisma.user.update({
+        where: { id: existingAuth.id },
+        data: { passwordHash: authHash, role: "AUTHORISED", emailVerified: true, emailVerifiedAt: new Date(), isActive: true, deletedAt: null },
+      });
+      console.log("Updated authorised user:", authorisedEmail);
+    } else {
+      await prisma.user.create({
+        data: {
+          email: authorisedEmail,
+          passwordHash: authHash,
+          role: "AUTHORISED",
+          emailVerified: true,
+          emailVerifiedAt: new Date(),
+          isActive: true,
+        },
+      });
+      console.log("Created authorised user:", authorisedEmail);
+    }
+  }
+
   // —— Demo user + pets (for main site) ——
   let user = await prisma.user.findFirst({
     where: { email: DEMO_EMAIL, deletedAt: null },
@@ -85,6 +114,7 @@ async function main() {
       {
         userId: user.id,
         microchipNumber: "977200009123456",
+        microchipSearchKey: "977200009123456",
         name: "Bella",
         species: "dog",
         breed: "Golden Retriever",
@@ -99,6 +129,7 @@ async function main() {
       {
         userId: user.id,
         microchipNumber: "977200009654321",
+        microchipSearchKey: "977200009654321",
         name: "Max",
         species: "cat",
         breed: "British Shorthair",
@@ -112,6 +143,7 @@ async function main() {
       {
         userId: user.id,
         microchipNumber: "977200009111222",
+        microchipSearchKey: "977200009111222",
         name: "Luna",
         species: "dog",
         breed: "Labrador",

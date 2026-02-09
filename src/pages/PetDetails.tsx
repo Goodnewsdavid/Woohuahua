@@ -8,6 +8,7 @@ import { apiUrl } from '@/lib/api';
 import { getAuthHeaders, getUser } from '@/lib/auth';
 import { getDemoPetById, type ApiPet } from '@/data/demoPets';
 import { getCondolenceMessage } from '@/lib/condolence';
+import { getDisplaySpecies } from '@/lib/pet';
 
 function formatDate(dateString: string | null) {
   if (!dateString) return 'Unknown';
@@ -88,7 +89,7 @@ function PetDetailContent({
                 )}
               </div>
               <CardDescription className="mt-1">
-                {pet.breed} • {pet.species} • {pet.sex === 'male' ? 'Male' : 'Female'} •{' '}
+                {pet.breed} • {getDisplaySpecies(pet.species, (pet as { speciesOther?: string | null }).speciesOther)} • {pet.sex === 'male' ? 'Male' : 'Female'} •{' '}
                 {pet.neutered ? 'Neutered' : 'Not neutered'}
               </CardDescription>
             </div>
@@ -123,7 +124,7 @@ function PetDetailContent({
                 </div>
                 <div className="flex justify-between gap-4 border-b border-border pb-2">
                   <dt className="text-muted-foreground">Species</dt>
-                  <dd className="font-medium capitalize">{pet.species}</dd>
+                  <dd className="font-medium capitalize">{getDisplaySpecies(pet.species, (pet as { speciesOther?: string | null }).speciesOther)}</dd>
                 </div>
                 <div className="flex justify-between gap-4 border-b border-border pb-2">
                   <dt className="text-muted-foreground">Breed</dt>

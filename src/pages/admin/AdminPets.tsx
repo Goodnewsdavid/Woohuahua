@@ -4,6 +4,7 @@ import { PawPrint, User } from "lucide-react";
 import { apiUrl } from "@/lib/api";
 import { getAuthHeaders } from "@/lib/auth";
 import { Badge } from "@/components/ui/badge";
+import { getDisplaySpecies } from "@/lib/pet";
 import {
   Table,
   TableBody,
@@ -18,6 +19,7 @@ type PetRow = {
   microchipNumber: string;
   name: string;
   species: string;
+  speciesOther?: string | null;
   breed: string;
   status: string;
   owner: {
@@ -103,7 +105,7 @@ export default function AdminPets() {
                     {p.microchipNumber}
                   </TableCell>
                   <TableCell>
-                    {p.species} • {p.breed}
+                    {getDisplaySpecies(p.species, p.speciesOther)} • {p.breed}
                   </TableCell>
                   <TableCell>
                     <Badge variant={statusVariant(p.status)}>{p.status}</Badge>

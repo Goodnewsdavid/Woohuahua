@@ -272,8 +272,104 @@ export const ferretBreeds = [
   'Other',
 ];
 
-// When species is "other"
+// When species is "other" and no matching list below
 export const otherBreeds = [
   'Mixed Breed',
   'Other',
 ];
+
+// Breeds for common "other" species (Option B: match breed list to custom species)
+export const hamsterBreeds = [
+  'Syrian',
+  'Dwarf (Campbell)',
+  'Dwarf (Winter White)',
+  'Roborovski',
+  'Chinese',
+  'Mixed Breed',
+  'Other',
+];
+
+export const birdBreeds = [
+  'Budgerigar',
+  'Cockatiel',
+  'Cockatoo',
+  'African Grey',
+  'Macaw',
+  'Conure',
+  'Parakeet',
+  'Canary',
+  'Finch',
+  'Lovebird',
+  'Mixed Breed',
+  'Other',
+];
+
+export const guineaPigBreeds = [
+  'American',
+  'Abyssinian',
+  'Peruvian',
+  'Silkie',
+  'Teddy',
+  'Texel',
+  'Coronet',
+  'Mixed Breed',
+  'Other',
+];
+
+export const reptileBreeds = [
+  'Bearded Dragon',
+  'Leopard Gecko',
+  'Crested Gecko',
+  'Tortoise',
+  'Terrapin',
+  'Snake',
+  'Mixed Breed',
+  'Other',
+];
+
+export const horsePonyBreeds = [
+  'Thoroughbred',
+  'Arabian',
+  'Quarter Horse',
+  'Shetland Pony',
+  'Welsh Pony',
+  'Cob',
+  'Mixed Breed',
+  'Other',
+];
+
+/** Map normalized "other" species name (lowercase) to breed list. Used when species is "Other". */
+export const otherSpeciesBreedsMap: Record<string, string[]> = {
+  hamster: hamsterBreeds,
+  hamsters: hamsterBreeds,
+  bird: birdBreeds,
+  birds: birdBreeds,
+  parrot: birdBreeds,
+  parrots: birdBreeds,
+  'guinea pig': guineaPigBreeds,
+  guineapig: guineaPigBreeds,
+  reptile: reptileBreeds,
+  reptiles: reptileBreeds,
+  tortoise: reptileBreeds,
+  turtle: reptileBreeds,
+  lizard: reptileBreeds,
+  snake: reptileBreeds,
+  horse: horsePonyBreeds,
+  horses: horsePonyBreeds,
+  pony: horsePonyBreeds,
+  ponies: horsePonyBreeds,
+};
+
+/** Get breed list for "Other" species based on the custom species name they typed. */
+export function getBreedsForOtherSpecies(speciesOther: string): string[] {
+  const key = speciesOther.trim().toLowerCase();
+  if (!key) return otherBreeds;
+  return otherSpeciesBreedsMap[key] ?? otherBreeds;
+}
+
+/** True when we have a specific breed list for this "other" species (e.g. hamster, bird). False = unlisted species, use free-text breed. */
+export function hasKnownBreedsForOtherSpecies(speciesOther: string): boolean {
+  const key = speciesOther.trim().toLowerCase();
+  if (!key) return false;
+  return key in otherSpeciesBreedsMap;
+}

@@ -6,11 +6,10 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const token = searchParams.get("token");
 
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:8080";
+
     if (!token || typeof token !== "string" || !token.trim()) {
-      return NextResponse.json(
-        { error: "Invalid or missing verification token." },
-        { status: 400 }
-      );
+      return NextResponse.redirect(`${frontendUrl}/login?verification=error`);
     }
 
     const record = await prisma.emailVerification.findUnique({
@@ -19,28 +18,16 @@ export async function GET(request: Request) {
     });
 
     if (!record) {
-      return NextResponse.json(
-        { error: "Invalid or expired verification token." },
-        { status: 400 }
-      );
+      return NextResponse.redirect(`${frontendUrl}/login?verification=error`);
     }
     if (record.usedAt) {
-      return NextResponse.json(
-        { error: "This verification link has already been used." },
-        { status: 400 }
-      );
+      return NextResponse.redirect(`${frontendUrl}/login?verified=1`);
     }
     if (record.expiresAt < new Date()) {
-      return NextResponse.json(
-        { error: "Verification token has expired." },
-        { status: 400 }
-      );
+      return NextResponse.redirect(`${frontendUrl}/login?verification=expired`);
     }
     if (record.user.deletedAt) {
-      return NextResponse.json(
-        { error: "Account is no longer active." },
-        { status: 400 }
-      );
+      return NextResponse.redirect(`${frontendUrl}/login?verification=error`);
     }
 
     const now = new Date();
@@ -55,14 +42,9 @@ export async function GET(request: Request) {
       }),
     ]);
 
-    return NextResponse.json({
-      success: true,
-      message: "Email verified successfully.",
-    });
+    return NextResponse.redirect(`${frontendUrl}/login?verified=1`);
   } catch {
-    return NextResponse.json(
-      { error: "Verification failed. Please try again." },
-      { status: 500 }
-    );
+    const url = process.env.FRONTEND_URL || "http://localhost:8080";
+    return NextResponse.redirect(`${url}/login?verification=error`);
   }
 }

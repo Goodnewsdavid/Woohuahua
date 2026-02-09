@@ -25,7 +25,10 @@ export default function TransferOwnership() {
   const [pet, setPet] = useState<{ id: string; name: string; microchipNumber: string } | null>(null);
   const [newOwnerEmail, setNewOwnerEmail] = useState('');
   const [outgoing, setOutgoing] = useState<{ id: string; petName: string; toEmail: string; status: string; createdAt: string }[]>([]);
-  const displayName = getUser()?.email?.split('@')[0] ?? 'User';
+  const currentUser = getUser();
+  const displayName = currentUser?.email?.split('@')[0] ?? 'User';
+  const currentUserEmail = (currentUser?.email ?? '').toLowerCase().trim();
+  const isTransferToSelf = newOwnerEmail.trim().toLowerCase() === currentUserEmail && currentUserEmail.length > 0;
 
   useEffect(() => {
     if (!id) {
@@ -203,6 +206,11 @@ export default function TransferOwnership() {
                 <p className="text-xs text-muted-foreground">
                   The new owner must already have an account and verified email.
                 </p>
+                {isTransferToSelf && (
+                  <p className="text-sm text-amber-600 dark:text-amber-400">
+                    This is your own email. Enter the new owner&apos;s email address instead.
+                  </p>
+                )}
               </div>
 
               <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground">
@@ -212,7 +220,7 @@ export default function TransferOwnership() {
               </div>
 
               <div className="flex gap-2">
-                <Button type="submit" disabled={submitting || !newOwnerEmail.trim()}>
+                <Button type="submit" disabled={submitting || !newOwnerEmail.trim() || isTransferToSelf}>
                   {submitting ? 'Sending...' : 'Send transfer request'}
                 </Button>
                 <Button variant="outline" asChild>

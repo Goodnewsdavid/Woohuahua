@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getUserIdFromRequest } from "@/lib/auth";
+import { validateMicrochipFormat, normalizeForSearch } from "@/lib/microchip";
 
 const VALID_SPECIES = ["dog", "cat", "rabbit", "ferret", "other"] as const;
 
@@ -9,6 +10,7 @@ function toPetResponse(pet: {
   microchipNumber: string;
   name: string;
   species: string;
+  speciesOther: string | null;
   breed: string;
   color: string;
   dateOfBirth: Date | null;
@@ -25,6 +27,7 @@ function toPetResponse(pet: {
     microchipNumber: pet.microchipNumber,
     name: pet.name,
     species: pet.species,
+    speciesOther: pet.speciesOther ?? null,
     breed: pet.breed,
     color: pet.color,
     dateOfBirth: pet.dateOfBirth?.toISOString().slice(0, 10) ?? null,
@@ -63,9 +66,10 @@ export async function POST(request: Request) {
     const { userId } = auth;
 
     const body = await request.json().catch(() => ({}));
-    const microchipNumber = typeof body.microchipNumber === "string" ? body.microchipNumber.trim() : "";
+    const microchipRaw = typeof body.microchipNumber === "string" ? body.microchipNumber.trim() : "";
     const name = typeof body.petName === "string" ? body.petName.trim() : (typeof body.name === "string" ? body.name.trim() : "");
     const speciesRaw = typeof body.species === "string" ? body.species.trim().toLowerCase() : "";
+    const speciesOther = typeof body.speciesOther === "string" ? body.speciesOther.trim() || null : null;
     const breed = typeof body.breed === "string" ? body.breed.trim() : "";
     const color = typeof body.color === "string" ? body.color.trim() : "";
     const dateOfBirthRaw = body.dateOfBirth;
@@ -74,18 +78,24 @@ export async function POST(request: Request) {
     const notes = typeof body.notes === "string" ? body.notes.trim() || null : null;
     const imageUrl = typeof body.imageUrl === "string" ? body.imageUrl.trim() || null : null;
 
-    if (!microchipNumber || microchipNumber.length < 15) {
-      return NextResponse.json(
-        { error: "Valid microchip number (at least 15 characters) is required." },
-        { status: 400 }
-      );
+    const chipValidation = validateMicrochipFormat(microchipRaw);
+    if (!chipValidation.valid) {
+      return NextResponse.json({ error: chipValidation.error }, { status: 400 });
     }
+    const microchipNumber = microchipRaw;
+    const microchipSearchKey = normalizeForSearch(microchipRaw);
     if (!name) {
       return NextResponse.json({ error: "Pet name is required." }, { status: 400 });
     }
     if (!VALID_SPECIES.includes(speciesRaw as (typeof VALID_SPECIES)[number])) {
       return NextResponse.json(
         { error: "Species must be one of: dog, cat, rabbit, ferret, other." },
+        { status: 400 }
+      );
+    }
+    if (speciesRaw === "other" && !speciesOther) {
+      return NextResponse.json(
+        { error: "Please specify the species (e.g. Hamster, Bird) when selecting Other." },
         { status: 400 }
       );
     }
@@ -106,7 +116,7 @@ export async function POST(request: Request) {
     }
 
     const existing = await prisma.pet.findFirst({
-      where: { microchipNumber },
+      where: { microchipSearchKey },
     });
     if (existing) {
       return NextResponse.json(
@@ -130,8 +140,10 @@ export async function POST(request: Request) {
       data: {
         userId,
         microchipNumber,
+        microchipSearchKey,
         name,
         species: speciesRaw as "dog" | "cat" | "rabbit" | "ferret" | "other",
+        speciesOther: speciesRaw === "other" ? speciesOther : null,
         breed,
         color,
         dateOfBirth,

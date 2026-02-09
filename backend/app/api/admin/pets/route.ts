@@ -29,6 +29,7 @@ export async function GET(request: Request) {
         microchipNumber: p.microchipNumber,
         name: p.name,
         species: p.species,
+        speciesOther: p.speciesOther ?? null,
         breed: p.breed,
         color: p.color,
         dateOfBirth: p.dateOfBirth?.toISOString().slice(0, 10) ?? null,

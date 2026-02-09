@@ -32,6 +32,7 @@ import TransferRequests from "./pages/TransferRequests";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
+import { AuthorisedRoute } from "./components/AuthorisedRoute";
 import { AdminLayout } from "./components/admin/AdminLayout";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -40,10 +41,13 @@ import AdminPets from "./pages/admin/AdminPets";
 import AdminDisputes from "./pages/admin/AdminDisputes";
 import AdminEscalations from "./pages/admin/AdminEscalations";
 import AdminLogs from "./pages/admin/AdminLogs";
+import AuthorisedSearch from "./pages/authorised/AuthorisedSearch";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const queryClient = new QueryClient();
 
 const App = () => (
+  <ErrorBoundary>
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -56,6 +60,7 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/register" element={<ProtectedRoute><Register /></ProtectedRoute>} />
           <Route path="/search" element={<Search />} />
+          <Route path="/authorised/search" element={<AuthorisedRoute><AuthorisedSearch /></AuthorisedRoute>} />
           <Route path="/lost-pet" element={<ProtectedRoute><LostPet /></ProtectedRoute>} />
           <Route path="/my-pets-timeline" element={<ProtectedRoute><MyPetsTimeline /></ProtectedRoute>} />
           <Route path="/contact" element={<Contact />} />
@@ -87,6 +92,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;

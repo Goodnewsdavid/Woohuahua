@@ -10,8 +10,9 @@ export async function POST(request: Request) {
     const { userId } = auth;
 
     const Stripe = (await import("stripe")).default;
-    const secret = process.env.STRIPE_SECRET_KEY;
+    const secret = process.env.STRIPE_SECRET_KEY?.trim();
     if (!secret) return NextResponse.json({ error: "Stripe is not configured." }, { status: 503 });
+    if (!secret.startsWith("sk_")) return NextResponse.json({ error: "Invalid Stripe key: use your Secret key (starts with sk_test_ or sk_live_), not the Publishable key (pk_)." }, { status: 503 });
 
     const frontendUrl = process.env.FRONTEND_URL || "http://localhost:8080";
     const base = request.headers.get("x-forwarded-proto") && request.headers.get("x-forwarded-host")
@@ -39,7 +40,7 @@ export async function POST(request: Request) {
         },
       ],
       metadata: { userId },
-      success_url: `${frontendUrl}/register?payment=success`,
+      success_url: `${frontendUrl}/register?payment=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${frontendUrl}/register?payment=cancelled`,
     });
 
@@ -48,6 +49,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ url });
   } catch (e) {
     console.error("Create checkout session error:", e);
+    const err = e as { type?: string; message?: string };
+    if (err.type === "StripeAuthenticationError" || err.message?.toLowerCase().includes("invalid api key")) {
+      return NextResponse.json({ error: "Invalid Stripe key. Check STRIPE_SECRET_KEY in .env (use test key for development)." }, { status: 503 });
+    }
+    if (err.type?.startsWith("Stripe")) {
+      return NextResponse.json({ error: err.message ?? "Stripe error. Check backend logs." }, { status: 500 });
+    }
     return NextResponse.json({ error: "Request failed." }, { status: 500 });
   }
 }

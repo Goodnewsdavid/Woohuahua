@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
+import { prisma } from "@/lib/prisma";
 
 export async function getUserIdFromRequest(
   request: Request
@@ -61,4 +62,19 @@ export async function getAdminFromRequest(
     return { error: NextResponse.json({ error: "Forbidden. Admin access required." }, { status: 403 }) };
 
   return { adminId: payload.userId };
+}
+
+/** For authorised-person routes (Reg 7(1)(e)): returns { userId } if token valid and user has role AUTHORISED. */
+export async function getAuthorisedFromRequest(
+  request: Request
+): Promise<{ userId: string } | { error: Response }> {
+  const auth = await getUserIdFromRequest(request);
+  if ("error" in auth) return auth;
+  const user = await prisma.user.findFirst({
+    where: { id: auth.userId, deletedAt: null, isActive: true },
+    select: { id: true, role: true },
+  });
+  if (!user || user.role !== "AUTHORISED")
+    return { error: NextResponse.json({ error: "Forbidden. Authorised person access required." }, { status: 403 }) };
+  return { userId: user.id };
 }

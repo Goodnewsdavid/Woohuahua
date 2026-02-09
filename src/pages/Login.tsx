@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, ArrowRight } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -12,12 +12,28 @@ import { TOKEN_KEY, USER_KEY } from '@/lib/auth';
 
 export default function Login() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const verified = searchParams.get('verified');
+    const verification = searchParams.get('verification');
+    if (verified === '1') {
+      toast({ title: 'Email verified', description: 'You can now sign in to your account.' });
+      setSearchParams({}, { replace: true });
+    } else if (verification === 'error') {
+      toast({ title: 'Verification failed', description: 'The link was invalid or expired. Try signing in or sign up again.', variant: 'destructive' });
+      setSearchParams({}, { replace: true });
+    } else if (verification === 'expired') {
+      toast({ title: 'Link expired', description: 'Verification links expire after 24 hours. Please sign up again or request a new link.', variant: 'destructive' });
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,9 +55,11 @@ export default function Login() {
         if (data.user) localStorage.setItem(USER_KEY, JSON.stringify(data.user));
       }
       toast({ title: 'Welcome back!', description: 'You are now signed in.' });
-      // Admins go to admin dashboard; everyone else to main dashboard
+      // Admins → admin dashboard; authorised persons → authorised search; others → dashboard
       if (data.user?.role === 'ADMIN') {
         navigate('/admin/dashboard');
+      } else if (data.user?.role === 'AUTHORISED') {
+        navigate('/authorised/search');
       } else {
         navigate('/dashboard');
       }

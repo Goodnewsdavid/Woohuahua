@@ -23,6 +23,8 @@ type Profile = {
   firstName: string | null;
   lastName: string | null;
   phone: string | null;
+  addressLine1: string | null;
+  city: string | null;
   postcode: string | null;
 };
 
@@ -35,7 +37,7 @@ export default function MyDetails() {
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ firstName: '', lastName: '', phone: '', postcode: '' });
+  const [form, setForm] = useState({ firstName: '', lastName: '', phone: '', addressLine1: '', city: '', postcode: '' });
 
   const fetchProfile = async () => {
     try {
@@ -54,6 +56,8 @@ export default function MyDetails() {
         firstName: data.firstName ?? '',
         lastName: data.lastName ?? '',
         phone: data.phone ?? '',
+        addressLine1: data.addressLine1 ?? '',
+        city: data.city ?? '',
         postcode: data.postcode ?? '',
       });
     } catch {
@@ -83,6 +87,8 @@ export default function MyDetails() {
           firstName: form.firstName.trim() || null,
           lastName: form.lastName.trim() || null,
           phone: form.phone.trim() || null,
+          addressLine1: form.addressLine1.trim() || null,
+          city: form.city.trim() || null,
           postcode: form.postcode.trim() || null,
         }),
       });
@@ -97,6 +103,8 @@ export default function MyDetails() {
         firstName: data.firstName ?? '',
         lastName: data.lastName ?? '',
         phone: data.phone ?? '',
+        addressLine1: data.addressLine1 ?? '',
+        city: data.city ?? '',
         postcode: data.postcode ?? '',
       });
       setEditing(false);
@@ -163,7 +171,7 @@ export default function MyDetails() {
                     Edit
                   </Button>
                 ) : (
-                  <Button variant="ghost" size="sm" onClick={() => { setEditing(false); setForm({ firstName: profile.firstName ?? '', lastName: profile.lastName ?? '', phone: profile.phone ?? '', postcode: profile.postcode ?? '' }); }}>
+                  <Button variant="ghost" size="sm" onClick={() => { setEditing(false); setForm({ firstName: profile.firstName ?? '', lastName: profile.lastName ?? '', phone: profile.phone ?? '', addressLine1: profile.addressLine1 ?? '', city: profile.city ?? '', postcode: profile.postcode ?? '' }); }}>
                     <X className="h-4 w-4 mr-1" />
                     Cancel
                   </Button>
@@ -206,14 +214,36 @@ export default function MyDetails() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="postcode">Postcode</Label>
+                      <Label htmlFor="addressLine1">Address (Reg 6)</Label>
                       <Input
-                        id="postcode"
-                        placeholder="e.g. SW1A 1AA"
-                        value={form.postcode}
-                        onChange={(e) => setForm({ ...form, postcode: e.target.value })}
+                        id="addressLine1"
+                        placeholder="House number and street"
+                        value={form.addressLine1}
+                        onChange={(e) => setForm({ ...form, addressLine1: e.target.value })}
                         disabled={saving}
                       />
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="city">City / Town</Label>
+                        <Input
+                          id="city"
+                          placeholder="e.g. London"
+                          value={form.city}
+                          onChange={(e) => setForm({ ...form, city: e.target.value })}
+                          disabled={saving}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="postcode">Postcode</Label>
+                      <Input
+                          id="postcode"
+                          placeholder="e.g. SW1A 1AA"
+                          value={form.postcode}
+                          onChange={(e) => setForm({ ...form, postcode: e.target.value })}
+                          disabled={saving}
+                        />
+                      </div>
                     </div>
                     <Button type="submit" disabled={saving}>
                       {saving ? 'Saving...' : 'Save changes'}
@@ -247,8 +277,10 @@ export default function MyDetails() {
                     <div className="flex items-center gap-3">
                       <MapPin className="h-5 w-5 text-muted-foreground" />
                       <div>
-                        <p className="text-sm text-muted-foreground">Postcode</p>
-                        <p className="font-medium text-foreground">{profile.postcode || '—'}</p>
+                        <p className="text-sm text-muted-foreground">Address (Reg 6)</p>
+                        <p className="font-medium text-foreground">
+                          {[profile.addressLine1, profile.city, profile.postcode].filter(Boolean).join(', ') || '—'}
+                        </p>
                       </div>
                     </div>
                   </div>
