@@ -165,9 +165,6 @@ export default function Login() {
                 <Button variant="outline" className="w-full" asChild>
                   <Link to="/authorised-login">Authorised Organisation Login</Link>
                 </Button>
-                <Button variant="outline" className="w-full" asChild>
-                  <Link to="/admin/login">Admin Login</Link>
-                </Button>
               </div>
             </CardContent>
           </Card>
