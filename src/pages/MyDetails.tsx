@@ -109,6 +109,7 @@ export default function MyDetails() {
       });
       setEditing(false);
       toast({ title: 'Profile updated', description: 'Your details have been saved.' });
+      await fetchProfile();
     } catch {
       toast({ title: 'Error', description: 'Could not reach the server.', variant: 'destructive' });
     } finally {
