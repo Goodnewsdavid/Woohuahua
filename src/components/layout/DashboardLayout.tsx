@@ -42,7 +42,7 @@ export function DashboardLayout({ children, userName = 'User' }: DashboardLayout
     <div className="flex min-h-screen flex-col">
       <Header isLoggedIn userName={userName} />
       
-      <div className="container flex flex-1 gap-6 py-6">
+      <div className="container flex flex-1 gap-4 px-3 py-4 sm:gap-6 sm:px-4 sm:py-6">
         {/* Sidebar */}
         <aside className="hidden w-64 shrink-0 lg:block">
           <div className="sticky top-24 rounded-xl border border-border bg-card p-4 shadow-sm">

@@ -119,23 +119,23 @@ export default function LostPet() {
 
   return (
     <DashboardLayout userName={displayName}>
-      <div className="container py-12">
+      <div className="container py-4 px-3 sm:py-8 sm:px-4 md:py-12">
         <div className="mx-auto max-w-2xl">
           {/* Header */}
-          <div className="mb-8 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-warning">
-              <AlertTriangle className="h-8 w-8 text-warning-foreground" />
+          <div className="mb-4 text-center sm:mb-8">
+            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-warning sm:mb-4 sm:h-16 sm:w-16 sm:rounded-2xl">
+              <AlertTriangle className="h-6 w-6 text-warning-foreground sm:h-8 sm:w-8" />
             </div>
-            <h1 className="font-display text-3xl font-bold text-foreground">
+            <h1 className="font-display text-2xl font-bold text-foreground sm:text-3xl">
               Report a Lost Pet
             </h1>
-            <p className="mt-2 text-muted-foreground">
+            <p className="mt-1 text-sm text-muted-foreground sm:mt-2 sm:text-base">
               Mark one of your registered pets as lost and alert the network
             </p>
           </div>
 
           {/* Alert */}
-          <div className="mb-6 rounded-xl border border-warning/20 bg-warning-light p-4">
+          <div className="mb-4 rounded-lg border border-warning/20 bg-warning-light p-3 sm:mb-6 sm:rounded-xl sm:p-4">
             <div className="flex gap-3">
               <Info className="h-5 w-5 shrink-0 text-warning" />
               <div>
@@ -149,16 +149,16 @@ export default function LostPet() {
           </div>
 
           {error && (
-            <div className="mb-6 rounded-lg bg-destructive/10 p-4 text-sm text-destructive">
+            <div className="mb-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive sm:mb-6 sm:p-4">
               {error}
             </div>
           )}
 
           {loading ? (
-            <div className="py-12 text-center text-muted-foreground">Loading your pets...</div>
+            <div className="py-8 text-center text-muted-foreground sm:py-12">Loading your pets...</div>
           ) : pets.length === 0 ? (
             <Card className="border-2">
-              <CardContent className="py-12 text-center">
+              <CardContent className="py-8 text-center sm:py-12">
                 <p className="text-muted-foreground mb-4">
                   You have no registered pets. Register a pet first, then you can report them as lost.
                 </p>
@@ -169,14 +169,14 @@ export default function LostPet() {
             </Card>
           ) : (
             <Card className="border-2">
-              <CardHeader>
+              <CardHeader className="px-4 pb-2 pt-4 sm:px-6 sm:pb-4 sm:pt-6">
                 <CardTitle className="font-display text-lg">Select Pet & Last Seen</CardTitle>
                 <CardDescription>
                   Choose the pet that is lost and provide last seen details
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-6">
+              <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
+                <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
                   <div className="space-y-2">
                     <Label htmlFor="petId">Which pet is lost? *</Label>
                     <Select
