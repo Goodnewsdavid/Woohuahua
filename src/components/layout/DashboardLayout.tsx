@@ -9,7 +9,6 @@ import {
   UserCog,
   ArrowLeftRight,
   Headphones,
-  ChevronLeft,
   Inbox,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -70,18 +69,6 @@ export function DashboardLayout({ children, userName = 'User' }: DashboardLayout
           </div>
         </aside>
 
-        {/* Mobile: back link only on sub-pages, not on dashboard */}
-        {location.pathname !== '/dashboard' && (
-          <div className="mb-2 flex items-center lg:hidden">
-            <Link
-              to="/dashboard"
-              className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Dashboard
-            </Link>
-          </div>
-        )}
 
         {/* Main content */}
         <div className="flex-1 min-w-0">{children}</div>
