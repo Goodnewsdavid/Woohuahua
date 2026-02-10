@@ -16,7 +16,6 @@ import { cn } from '@/lib/utils';
 import { Header } from './Header';
 import { Footer } from './Footer';
 import { ChatWidget } from '@/components/chat/ChatWidget';
-import { Button } from '@/components/ui/button';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -71,15 +70,18 @@ export function DashboardLayout({ children, userName = 'User' }: DashboardLayout
           </div>
         </aside>
 
-        {/* Mobile navigation */}
-        <div className="mb-4 flex items-center gap-2 overflow-x-auto lg:hidden">
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="/" className="flex items-center gap-1">
+        {/* Mobile: back link only on sub-pages, not on dashboard */}
+        {location.pathname !== '/dashboard' && (
+          <div className="mb-2 flex items-center lg:hidden">
+            <Link
+              to="/dashboard"
+              className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+            >
               <ChevronLeft className="h-4 w-4" />
-              Back
+              Dashboard
             </Link>
-          </Button>
-        </div>
+          </div>
+        )}
 
         {/* Main content */}
         <div className="flex-1 min-w-0">{children}</div>
