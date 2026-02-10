@@ -39,8 +39,18 @@ const adminNav = [
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
+
+  // Desktop: sidebar open by default. Mobile: closed; close when resizing to mobile
+  useEffect(() => {
+    setSidebarOpen(window.innerWidth >= 768);
+    const onResize = () => {
+      if (window.innerWidth < 768) setSidebarOpen(false);
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   useEffect(() => {
     document.documentElement.classList.add("dark");
@@ -67,10 +77,11 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-background dark">
       {/* Top bar */}
       <header className="sticky top-0 z-40 border-b border-border bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-        <div className="flex h-14 items-center gap-4 px-4">
+        <div className="flex h-14 min-w-0 items-center gap-2 px-3 sm:gap-4 sm:px-4">
           <Button
             variant="ghost"
             size="icon"
+            className="shrink-0"
             onClick={() => setSidebarOpen((o) => !o)}
             aria-label="Toggle sidebar"
           >
@@ -78,33 +89,39 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           </Button>
           <Button
             variant="outline"
-            className="flex flex-1 max-w-md items-center gap-2 rounded-lg border-border bg-muted/50 text-muted-foreground"
+            className="min-w-0 flex-1 gap-2 rounded-lg border-border bg-muted/50 text-muted-foreground sm:max-w-md"
             onClick={() => setCommandOpen(true)}
           >
-            <Search className="h-4 w-4" />
-            <span className="text-sm">Search or jump... (Ctrl+K)</span>
+            <Search className="h-4 w-4 shrink-0" />
+            <span className="hidden truncate text-sm sm:inline">Search or jump... (Ctrl+K)</span>
           </Button>
-          <span className="text-sm text-muted-foreground">
+          <span className="hidden min-w-0 truncate text-sm text-muted-foreground sm:max-w-[180px] md:inline">
             {getUser()?.email ?? "Admin"}
           </span>
-          <Button variant="ghost" size="icon" onClick={handleSignOut} aria-label="Sign out">
+          <Button variant="ghost" size="icon" className="shrink-0" onClick={handleSignOut} aria-label="Sign out">
             <LogOut className="h-4 w-4" />
           </Button>
         </div>
       </header>
 
-      <div className="flex">
-        {/* Collapsible sidebar */}
+      <div className="flex min-w-0">
+        {/* Sidebar: overlay on mobile, inline on md+ */}
         <AnimatePresence>
           {sidebarOpen && (
-            <motion.aside
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 240, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="shrink-0 border-r border-border bg-card/50"
-            >
-              <nav className="flex flex-col gap-1 p-3">
+            <>
+              <div
+                className="fixed inset-0 z-20 bg-black/50 md:hidden"
+                aria-hidden
+                onClick={() => setSidebarOpen(false)}
+              />
+              <motion.aside
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: 240, opacity: 1 }}
+                exit={{ width: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="fixed left-0 top-14 z-30 h-[calc(100vh-3.5rem)] w-60 shrink-0 border-r border-border bg-card shadow-lg md:relative md:top-0 md:h-auto md:w-auto md:shadow-none"
+              >
+                <nav className="flex flex-col gap-1 p-3">
                 {adminNav.map((item) => {
                   const Icon = item.icon;
                   const isActive = location.pathname === item.href;
@@ -124,13 +141,14 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                     </Link>
                   );
                 })}
-              </nav>
-            </motion.aside>
+                </nav>
+              </motion.aside>
+            </>
           )}
         </AnimatePresence>
 
         {/* Main content */}
-        <main className="flex-1 p-6">{children}</main>
+        <main className="min-w-0 flex-1 p-4 sm:p-6">{children}</main>
       </div>
 
       {/* Command palette */}

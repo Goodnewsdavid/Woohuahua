@@ -87,23 +87,23 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       <div>
-        <h1 className="font-display text-2xl font-bold text-foreground">
+        <h1 className="font-display text-xl font-bold text-foreground sm:text-2xl">
           Admin Dashboard
         </h1>
-        <p className="text-muted-foreground">
+        <p className="mt-1 text-sm text-muted-foreground sm:text-base">
           Overview of Woo-Huahua admin metrics. Click a card to open that section.
         </p>
       </div>
 
       {error && (
-        <div className="rounded-lg border border-amber-500/50 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-400">
+        <div className="rounded-lg border border-amber-500/50 bg-amber-500/10 px-3 py-2.5 text-sm text-amber-700 dark:text-amber-400 sm:px-4 sm:py-3">
           {error}
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
         {cardConfig.map((item, i) => {
           const Icon = item.icon;
           const value =
@@ -129,17 +129,17 @@ export default function AdminDashboard() {
                     ${item.color}
                   `}
                 >
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-4 sm:pt-6">
+                    <CardTitle className="text-xs font-medium text-muted-foreground sm:text-sm">
                       {item.title}
                     </CardTitle>
-                    <Icon className="h-5 w-5 text-muted-foreground" />
+                    <Icon className="h-4 w-4 shrink-0 text-muted-foreground sm:h-5 sm:w-5" />
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="pb-4 sm:pb-6">
                     {loading ? (
-                      <div className="h-8 w-16 animate-pulse rounded bg-muted" />
+                      <div className="h-7 w-14 animate-pulse rounded bg-muted sm:h-8 sm:w-16" />
                     ) : (
-                      <span className="text-2xl font-bold">{value}</span>
+                      <span className="text-xl font-bold sm:text-2xl">{value}</span>
                     )}
                   </CardContent>
                 </Card>
