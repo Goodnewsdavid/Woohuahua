@@ -60,7 +60,8 @@ export async function POST(request: Request) {
       },
     });
 
-    const baseUrl = process.env.BACKEND_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
+    let baseUrl = (process.env.BACKEND_URL || process.env.NEXTAUTH_URL || "http://localhost:3000").replace(/\/$/, "");
+    if (!/^https?:\/\//i.test(baseUrl)) baseUrl = `https://${baseUrl}`;
     const verificationUrl = `${baseUrl}/api/auth/verify-email?token=${token}`;
 
     const emailSent = await sendVerificationEmail(email, verificationUrl);
