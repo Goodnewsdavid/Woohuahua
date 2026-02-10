@@ -42,6 +42,7 @@ import AdminPets from "./pages/admin/AdminPets";
 import AdminDisputes from "./pages/admin/AdminDisputes";
 import AdminEscalations from "./pages/admin/AdminEscalations";
 import AdminLogs from "./pages/admin/AdminLogs";
+import AdminPromo from "./pages/admin/AdminPromo";
 import AuthorisedSearch from "./pages/authorised/AuthorisedSearch";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
@@ -88,6 +89,7 @@ const App = () => (
           <Route path="/admin/pets" element={<AdminRoute><AdminLayout><AdminPets /></AdminLayout></AdminRoute>} />
           <Route path="/admin/disputes" element={<AdminRoute><AdminLayout><AdminDisputes /></AdminLayout></AdminRoute>} />
           <Route path="/admin/escalations" element={<AdminRoute><AdminLayout><AdminEscalations /></AdminLayout></AdminRoute>} />
+          <Route path="/admin/promo" element={<AdminRoute><AdminLayout><AdminPromo /></AdminLayout></AdminRoute>} />
           <Route path="/admin/logs" element={<AdminRoute><AdminLayout><AdminLogs /></AdminLayout></AdminRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>

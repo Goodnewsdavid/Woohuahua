@@ -156,6 +156,16 @@ model TransferPayment {
   @@index([stripeSessionId])
 }
 
+model PromoCode {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  maxUses   Int?     // null = unlimited
+  usedCount Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([code])
+}
+
 model EmailVerification {
   id        String    @id @default(uuid())
   userId    String

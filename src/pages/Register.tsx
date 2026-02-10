@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowRight, PawPrint, Calendar, Info, ImageIcon, X, CreditCard } from 'lucide-react';
+import { ArrowRight, PawPrint, Calendar, Info, ImageIcon, X, CreditCard, Ticket } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +32,9 @@ export default function Register() {
   const [credits, setCredits] = useState<number | null>(null);
   const [creditsLoading, setCreditsLoading] = useState(true);
   const [payLoading, setPayLoading] = useState(false);
+  const [promoCode, setPromoCode] = useState('');
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoError, setPromoError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -128,6 +131,33 @@ export default function Register() {
       clearTimeout(t2);
     };
   }, [paymentSuccess, credits]);
+
+  const handleRedeemPromo = async () => {
+    const code = promoCode.trim();
+    if (!code) return;
+    setPromoError(null);
+    setPromoLoading(true);
+    try {
+      const res = await fetch(apiUrl('/api/payments/redeem-promo'), {
+        method: 'POST',
+        headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setPromoError(data.error ?? 'Invalid or expired code.');
+        setPromoLoading(false);
+        return;
+      }
+      const newCredits = typeof data.credits === 'number' ? data.credits : await fetchCredits();
+      setCredits(newCredits);
+      setPromoCode('');
+      setPromoError(null);
+    } catch {
+      setPromoError('Something went wrong. Please try again.');
+    }
+    setPromoLoading(false);
+  };
 
   const handlePayThenRegister = async () => {
     setError(null);
@@ -290,6 +320,33 @@ export default function Register() {
                 you need to register the chip number to yourself. Pay once per pet to register with us and get lifetime
                 access to update details.
               </p>
+              <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
+                <p className="text-sm font-medium flex items-center gap-2">
+                  <Ticket className="h-4 w-4" />
+                  Have a promo code?
+                </p>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="e.g. FAMILY25"
+                    value={promoCode}
+                    onChange={(e) => { setPromoCode(e.target.value.toUpperCase()); setPromoError(null); }}
+                    className="flex-1"
+                    maxLength={32}
+                    disabled={promoLoading}
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={promoLoading || !promoCode.trim()}
+                    onClick={handleRedeemPromo}
+                  >
+                    {promoLoading ? 'Applying…' : 'Apply'}
+                  </Button>
+                </div>
+                {promoError && (
+                  <p className="text-sm text-destructive">{promoError}</p>
+                )}
+              </div>
               <Button
                 size="lg"
                 className="w-full"
