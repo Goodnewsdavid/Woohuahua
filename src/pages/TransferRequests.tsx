@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Inbox, Check, X, PawPrint } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { Inbox, Check, X, PawPrint, CreditCard } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/components/ui/use-toast';
 import { apiUrl } from '@/lib/api';
 import { getAuthHeaders, getUser } from '@/lib/auth';
+
+const TRANSFER_FEE_GBP = '24.99';
 
 type IncomingItem = {
   id: string;
@@ -21,6 +23,7 @@ type IncomingItem = {
 };
 
 export default function TransferRequests() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [incoming, setIncoming] = useState<IncomingItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState<string | null>(null);
@@ -43,26 +46,59 @@ export default function TransferRequests() {
     load();
   }, []);
 
-  const handleAccept = async (id: string) => {
+  useEffect(() => {
+    const payment = searchParams.get('payment');
+    const sessionId = searchParams.get('session_id');
+    if (payment === 'cancelled') {
+      toast({ title: 'Payment cancelled', description: 'You can try again when you\'re ready.', variant: 'destructive' });
+      setSearchParams({}, { replace: true });
+      return;
+    }
+    if (payment === 'success' && sessionId) {
+      (async () => {
+        try {
+          const res = await fetch(apiUrl(`/api/payments/confirm-transfer-session?session_id=${encodeURIComponent(sessionId)}`), {
+            headers: getAuthHeaders(),
+          });
+          const data = await res.json().catch(() => ({}));
+          setSearchParams({}, { replace: true });
+          if (data.completed || data.success) {
+            toast({ title: 'Transfer complete', description: data.message ?? 'You are now the owner of this pet.' });
+            load();
+          } else {
+            toast({ title: 'Error', description: data.error ?? 'Could not complete transfer.', variant: 'destructive' });
+          }
+        } catch {
+          setSearchParams({}, { replace: true });
+          toast({ title: 'Error', description: 'Request failed.', variant: 'destructive' });
+        }
+      })();
+    }
+  }, [searchParams, setSearchParams]);
+
+  const handleAcceptAndPay = async (id: string) => {
     setActing(id);
     try {
-      const res = await fetch(apiUrl(`/api/transfers/${id}`), {
-        method: 'PATCH',
+      const res = await fetch(apiUrl('/api/payments/create-transfer-checkout-session'), {
+        method: 'POST',
         headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'accept' }),
+        body: JSON.stringify({ transferRequestId: id }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast({ title: 'Error', description: data.error ?? 'Failed to accept.', variant: 'destructive' });
+        toast({ title: 'Error', description: data.error ?? 'Failed to start checkout.', variant: 'destructive' });
+        setActing(null);
         return;
       }
-      toast({ title: 'Accepted', description: data.message ?? 'You are now the owner of this pet.' });
-      load();
+      if (data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      toast({ title: 'Error', description: 'No checkout URL received.', variant: 'destructive' });
     } catch {
       toast({ title: 'Error', description: 'Request failed.', variant: 'destructive' });
-    } finally {
-      setActing(null);
     }
+    setActing(null);
   };
 
   const handleReject = async (id: string) => {
@@ -93,7 +129,7 @@ export default function TransferRequests() {
         <div>
           <h1 className="font-display text-2xl font-bold">Transfer requests</h1>
           <p className="text-muted-foreground">
-            Requests sent to you to take ownership of a pet. Accept or reject below.
+            Requests sent to you to take ownership of a pet. To accept, pay the one-time transfer fee (£{TRANSFER_FEE_GBP}); then the pet will move to your account.
           </p>
         </div>
 
@@ -128,10 +164,10 @@ export default function TransferRequests() {
                     size="sm"
                     className="bg-green-600 hover:bg-green-700"
                     disabled={!!acting}
-                    onClick={() => handleAccept(t.id)}
+                    onClick={() => handleAcceptAndPay(t.id)}
                   >
-                    <Check className="h-4 w-4 mr-1" />
-                    Accept
+                    <CreditCard className="h-4 w-4 mr-1" />
+                    Accept and pay £{TRANSFER_FEE_GBP}
                   </Button>
                   <Button
                     size="sm"

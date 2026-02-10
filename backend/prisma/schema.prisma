@@ -131,14 +131,29 @@ model TransferRequest {
   createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt
 
-  pet  Pet  @relation(fields: [petId], references: [id], onDelete: Cascade)
-  from User @relation("FromUser", fields: [fromUserId], references: [id], onDelete: Cascade)
-  to   User @relation("ToUser", fields: [toUserId], references: [id], onDelete: Cascade)
+  pet     Pet              @relation(fields: [petId], references: [id], onDelete: Cascade)
+  from    User             @relation("FromUser", fields: [fromUserId], references: [id], onDelete: Cascade)
+  to      User             @relation("ToUser", fields: [toUserId], references: [id], onDelete: Cascade)
+  payment TransferPayment?
 
   @@index([petId])
   @@index([fromUserId])
   @@index([toUserId])
   @@index([status])
+}
+
+model TransferPayment {
+  id                String   @id @default(uuid())
+  transferRequestId String   @unique
+  stripeSessionId   String   @unique
+  amountPence       Int
+  currency          String   @default("gbp")
+  paidAt            DateTime @default(now())
+
+  transferRequest TransferRequest @relation(fields: [transferRequestId], references: [id], onDelete: Cascade)
+
+  @@index([transferRequestId])
+  @@index([stripeSessionId])
 }
 
 model EmailVerification {

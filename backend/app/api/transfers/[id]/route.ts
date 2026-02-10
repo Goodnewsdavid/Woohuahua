@@ -43,21 +43,16 @@ export async function PATCH(
       return NextResponse.json({ success: true, message: "Transfer rejected." });
     }
 
-    await prisma.$transaction([
-      prisma.pet.update({
-        where: { id: transfer.petId },
-        data: { userId: transfer.toUserId },
-      }),
-      prisma.transferRequest.update({
-        where: { id },
-        data: { status: "accepted" },
-      }),
-    ]);
-
-    return NextResponse.json({
-      success: true,
-      message: `You are now the owner of ${transfer.pet.name}.`,
-    });
+    if (action === "accept") {
+      return NextResponse.json(
+        {
+          error: "To accept this transfer, please pay the transfer fee. Use the 'Accept and pay' button.",
+          needPayment: true,
+          transferRequestId: id,
+        },
+        { status: 400 }
+      );
+    }
   } catch {
     return NextResponse.json({ error: "Request failed." }, { status: 500 });
   }
