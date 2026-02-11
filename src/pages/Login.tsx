@@ -75,7 +75,7 @@ export default function Login() {
     <Layout hideChat>
       <div className="container flex min-h-[calc(100vh-12rem)] items-center justify-center py-8">
         <div className="mx-auto w-full max-w-4xl">
-          <div className="grid min-h-0 overflow-hidden rounded-2xl border-2 border-border bg-card shadow-lg lg:min-h-[480px] lg:grid-cols-[1.6fr_1fr]">
+          <div className="grid min-h-0 overflow-hidden rounded-2xl border-2 border-border bg-card shadow-lg lg:min-h-[480px] lg:grid-cols-2">
             {/* Pet image - full left side; use local file so it always loads (replace public/login-pet.jpg with your own) */}
             <div className="relative min-h-[220px] bg-muted lg:h-full">
               <img
