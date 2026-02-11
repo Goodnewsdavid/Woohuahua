@@ -79,9 +79,9 @@ export default function Login() {
             {/* Pet image - visible on all screens, smaller on mobile */}
             <div className="relative h-48 bg-muted lg:h-[420px]">
               <img
-                src="https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=800&q=80"
+                src="https://images.unsplash.com/photo-1583512605855-1fe6e685f780?w=800&q=85"
                 alt=""
-                className="h-full w-full object-cover"
+                className="h-full w-full object-cover object-center"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent lg:from-black/30" />
             </div>
