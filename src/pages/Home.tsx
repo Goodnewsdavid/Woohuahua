@@ -66,12 +66,13 @@ const stats = [
   { value: '24/7', label: 'Support' },
 ];
 
-// Hero carousel images (high-quality pet photos, Unsplash)
+// Hero carousel: mix of animals (dog, cat, rabbit, dog) – Unsplash
 const heroSlides = [
-  { src: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=1600&q=80', alt: 'Happy dog' },
+  { src: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=1600&q=80', alt: 'Dog' },
   { src: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=1600&q=80', alt: 'Cat' },
   { src: 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=1600&q=80', alt: 'Dog outdoors' },
-  { src: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=1600&q=80', alt: 'Pet' },
+  { src: 'https://images.unsplash.com/photo-1450778869180-41d0601e046e?w=1600&q=80', alt: 'Rabbit' },
+  { src: 'https://images.unsplash.com/photo-1573865526739-10659fec78a5?w=1600&q=80', alt: 'Cat close-up' },
 ];
 const HERO_AUTO_ADVANCE_MS = 5000;
 
@@ -119,8 +120,8 @@ export default function Home() {
               />
             </div>
           ))}
-          {/* Dark overlay so text stays readable */}
-          <div className="absolute inset-0 z-[1] bg-gradient-to-b from-primary/85 via-primary/75 to-primary/90" />
+          {/* Subtle dark overlay – images show through, text stays readable; no strong pink */}
+          <div className="absolute inset-0 z-[1] bg-gradient-to-b from-black/50 via-black/40 to-black/55" />
         </div>
 
         <div className="container relative z-10">
