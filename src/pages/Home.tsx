@@ -68,7 +68,7 @@ const stats = [
 
 // Hero carousel: mix of animals (dog, cat, rabbit, dog) – Unsplash
 const heroSlides = [
-  { src: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=1600&q=80', alt: 'Dog' },
+  { src: 'https://images.unsplash.com/photo-1587300003344-59208cc962cb?w=1600&q=80', alt: 'Dog' },
   { src: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=1600&q=80', alt: 'Cat' },
   { src: 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=1600&q=80', alt: 'Dog outdoors' },
   { src: 'https://images.unsplash.com/photo-1450778869180-41d0601e046e?w=1600&q=80', alt: 'Rabbit' },
