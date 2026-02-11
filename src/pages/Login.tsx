@@ -73,19 +73,31 @@ export default function Login() {
 
   return (
     <Layout hideChat>
-      <div className="container flex min-h-[calc(100vh-12rem)] items-center justify-center py-12">
-        <div className="mx-auto w-full max-w-md">
-          <Card className="border-2">
-            <CardHeader className="text-center">
+      <div className="container flex min-h-[calc(100vh-12rem)] items-center justify-center py-8">
+        <div className="mx-auto w-full max-w-4xl">
+          <div className="grid overflow-hidden rounded-2xl border-2 border-border bg-card shadow-lg lg:grid-cols-2">
+            {/* Pet image - visible on all screens, smaller on mobile */}
+            <div className="relative h-48 bg-muted lg:h-[420px]">
+              <img
+                src="https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=800&q=80"
+                alt=""
+                className="h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent lg:from-black/30" />
+            </div>
+
+            <div className="flex flex-col justify-center p-6 sm:p-8">
+              <Card className="border-0 shadow-none">
+                <CardHeader className="p-0 text-center">
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-hero">
-                <span className="text-2xl font-bold text-white">W</span>
-              </div>
-              <CardTitle className="font-display text-2xl">Welcome Back</CardTitle>
-              <CardDescription>
-                Sign in to your Woo-Huahua account
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+                  <span className="text-2xl font-bold text-white">W</span>
+                </div>
+                <CardTitle className="font-display text-2xl">Welcome Back</CardTitle>
+                <CardDescription>
+                  Sign in to your Woo-Huahua account
+                </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-4">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">Email Address</Label>
@@ -154,7 +166,9 @@ export default function Login() {
               </p>
 
               </CardContent>
-          </Card>
+              </Card>
+            </div>
+          </div>
         </div>
       </div>
     </Layout>

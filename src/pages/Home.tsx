@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Search,
@@ -66,11 +66,28 @@ const stats = [
   { value: '24/7', label: 'Support' },
 ];
 
+// Hero carousel images (high-quality pet photos, Unsplash)
+const heroSlides = [
+  { src: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=1600&q=80', alt: 'Happy dog' },
+  { src: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=1600&q=80', alt: 'Cat' },
+  { src: 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=1600&q=80', alt: 'Dog outdoors' },
+  { src: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=1600&q=80', alt: 'Pet' },
+];
+const HERO_AUTO_ADVANCE_MS = 5000;
+
 export default function Home() {
   const navigate = useNavigate();
   const loggedIn = isLoggedIn();
   const userName = getUser()?.email?.split('@')[0] ?? '';
   const [chipCheck, setChipCheck] = useState('');
+  const [heroIndex, setHeroIndex] = useState(0);
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      setHeroIndex((i) => (i + 1) % heroSlides.length);
+    }, HERO_AUTO_ADVANCE_MS);
+    return () => clearInterval(t);
+  }, []);
 
   const handleChipCheck = (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,15 +99,31 @@ export default function Home() {
 
   return (
     <Layout>
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-hero py-20 lg:py-28">
-        {/* Background pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute left-1/4 top-1/4 h-64 w-64 rounded-full bg-white blur-3xl" />
-          <div className="absolute bottom-1/4 right-1/4 h-64 w-64 rounded-full bg-white blur-3xl" />
+      {/* Hero Section with image carousel */}
+      <section className="relative overflow-hidden py-20 lg:py-28" aria-label="Hero">
+        {/* Sliding background images */}
+        <div className="absolute inset-0">
+          {heroSlides.map((slide, i) => (
+            <div
+              key={slide.src}
+              className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+                i === heroIndex ? 'opacity-100 z-0' : 'opacity-0 z-0'
+              }`}
+              aria-hidden={i !== heroIndex}
+            >
+              <img
+                src={slide.src}
+                alt=""
+                className="h-full w-full object-cover"
+                fetchPriority={i === 0 ? 'high' : undefined}
+              />
+            </div>
+          ))}
+          {/* Dark overlay so text stays readable */}
+          <div className="absolute inset-0 z-[1] bg-gradient-to-b from-primary/85 via-primary/75 to-primary/90" />
         </div>
 
-        <div className="container relative">
+        <div className="container relative z-10">
           <div className="mx-auto max-w-3xl text-center">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm">
               <Shield className="h-4 w-4" />
@@ -178,8 +211,25 @@ export default function Home() {
               )}
             </div>
 
+            {/* Carousel dots */}
+            <div className="mt-10 flex justify-center gap-2" role="tablist" aria-label="Hero slides">
+              {heroSlides.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  role="tab"
+                  aria-selected={i === heroIndex}
+                  aria-label={`Slide ${i + 1}`}
+                  onClick={() => setHeroIndex(i)}
+                  className={`h-2 rounded-full transition-all ${
+                    i === heroIndex ? 'w-6 bg-white' : 'w-2 bg-white/50 hover:bg-white/70'
+                  }`}
+                />
+              ))}
+            </div>
+
             {/* Floating pet icons */}
-            <div className="mt-12 flex items-center justify-center gap-8">
+            <div className="mt-8 flex items-center justify-center gap-8">
               <div className="flex h-16 w-16 animate-float items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm" style={{ animationDelay: '0s' }}>
                 <Dog className="h-8 w-8 text-white" />
               </div>
