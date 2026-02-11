@@ -75,13 +75,13 @@ export default function Login() {
     <Layout hideChat>
       <div className="container flex min-h-[calc(100vh-12rem)] items-center justify-center py-8">
         <div className="mx-auto w-full max-w-4xl">
-          <div className="grid overflow-hidden rounded-2xl border-2 border-border bg-card shadow-lg lg:grid-cols-2">
-            {/* Pet image - visible on all screens, smaller on mobile */}
-            <div className="relative h-48 bg-muted lg:h-[420px]">
+          <div className="grid min-h-0 overflow-hidden rounded-2xl border-2 border-border bg-card shadow-lg lg:min-h-[480px] lg:grid-cols-[1.6fr_1fr]">
+            {/* Pet image - full left side on desktop */}
+            <div className="relative min-h-[220px] bg-muted lg:h-full">
               <img
-                src="https://images.unsplash.com/photo-1583512605855-1fe6e685f780?w=800&q=85"
+                src="https://images.unsplash.com/photo-1583512605855-1fe6e685f780?w=900&q=85"
                 alt=""
-                className="h-full w-full object-cover object-center"
+                className="absolute inset-0 h-full w-full object-cover object-center"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent lg:from-black/30" />
             </div>
