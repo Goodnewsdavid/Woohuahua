@@ -153,21 +153,7 @@ export default function Login() {
                 </Link>
               </p>
 
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-border" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">Or</span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Button variant="outline" className="w-full" asChild>
-                  <Link to="/authorised-login">Authorised Organisation Login</Link>
-                </Button>
-              </div>
-            </CardContent>
+              </CardContent>
           </Card>
         </div>
       </div>
