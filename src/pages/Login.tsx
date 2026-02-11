@@ -46,7 +46,8 @@ export default function Login() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast({ title: 'Login failed', description: data.error ?? 'Invalid email or password.', variant: 'destructive' });
+        const desc = [data.error, data.detail].filter(Boolean).join(' — ') || 'Invalid email or password.';
+        toast({ title: 'Login failed', description: desc, variant: 'destructive' });
         setIsLoading(false);
         return;
       }
