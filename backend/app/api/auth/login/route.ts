@@ -18,16 +18,28 @@ export async function POST(request: Request) {
       );
     }
 
+    // Match email case-insensitively so Test@ and test@ both work
     const user = await prisma.user.findFirst({
       where: {
-        email,
+        email: { equals: email, mode: "insensitive" },
         deletedAt: null,
         isActive: true,
         emailVerified: true,
       },
     });
 
-    if (!user || !bcrypt.compareSync(password, user.passwordHash)) {
+    if (!user) {
+      return NextResponse.json(
+        { error: "Invalid email or password." },
+        { status: 401 }
+      );
+    }
+    const hash = user.passwordHash;
+    const passwordOk =
+      typeof hash === "string" &&
+      hash.length > 0 &&
+      bcrypt.compareSync(password, hash);
+    if (!passwordOk) {
       return NextResponse.json(
         { error: "Invalid email or password." },
         { status: 401 }
@@ -66,7 +78,8 @@ export async function POST(request: Request) {
         role: user.role,
       },
     });
-  } catch {
+  } catch (err) {
+    console.error("[auth/login]", err);
     return NextResponse.json(
       { error: "Login failed. Please try again." },
       { status: 500 }

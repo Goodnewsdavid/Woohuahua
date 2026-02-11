@@ -23,9 +23,13 @@ export async function GET(request: Request) {
         createdAt: p.createdAt.toISOString(),
       }))
     );
-  } catch (e) {
+  } catch (e: unknown) {
     console.error("[admin/promo GET]", e);
-    return NextResponse.json({ error: "Request failed." }, { status: 500 });
+    const msg =
+      e && typeof e === "object" && "code" in e && (e as { code: string }).code === "P2021"
+        ? "Promo codes not set up. Run: npx prisma migrate deploy"
+        : "Request failed.";
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
 
@@ -57,8 +61,12 @@ export async function POST(request: Request) {
       usedCount: promo.usedCount,
       createdAt: promo.createdAt.toISOString(),
     });
-  } catch (e) {
+  } catch (e: unknown) {
     console.error("[admin/promo POST]", e);
-    return NextResponse.json({ error: "Request failed." }, { status: 500 });
+    const msg =
+      e && typeof e === "object" && "code" in e && (e as { code: string }).code === "P2021"
+        ? "Promo codes not set up. Run: npx prisma migrate deploy"
+        : "Request failed.";
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
